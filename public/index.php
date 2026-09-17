@@ -103,6 +103,9 @@ $appSettings = [
 <script id="app-settings" type="application/json"><?= json_encode($appSettings, JSON_UNESCAPED_SLASHES) ?></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
+<?php if (($_GET['renderer'] ?? '') === 'webgl'): ?>
+<script src="https://unpkg.com/deck.gl@9.4.0/dist.min.js"></script>
+<?php endif; ?>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

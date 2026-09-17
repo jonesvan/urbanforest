@@ -147,6 +147,41 @@ interface so the GPU backend can be swapped later.
   invisible and reduces GPU work at low zoom.
 - Add LOD styling (fill opacity/threshold by zoom) rather than dropping features.
 
+## Prototype status (implemented)
+
+A deck.gl path is wired in behind a flag: **`?renderer=webgl`**.
+
+- `index.php` loads the deck.gl UMD bundle (`deck.gl@9.4.0`) only for that flag.
+- `app.js` (`initDeck`) creates a deck overlay canvas over the Leaflet map, syncs the
+  camera on `move/zoom/resize`, renders the crowns with `MVTLayer` against the existing
+  `public/tiles/crowns/{z}/{x}/{y}.pbf`, and does picking via Leaflet clicks
+  (`deck.pickObject`). The canvas is `pointer-events:none` so Leaflet keeps pan/zoom.
+- The default (`?renderer=svg` / no flag) still uses Leaflet.VectorGrid + SVG, so the two
+  can be A/B compared without touching the dataset.
+
+Observed (headless Chromium + SwiftShader screenshots): crowns render as crisp GPU
+polygons over the basemap at **z13–z17** and look equal to or sharper than the SVG path.
+
+Known limitations found while prototyping:
+
+1. **Tile-scheme offset.** deck.gl/TileLayer default to a 512-px tile scheme; Leaflet and
+   our `geojson-vt` tiles are 256-px. As a result deck fetches tile zoom ≈ viewport
+   zoom + 1, so it uses our z17 tiles at Leaflet z16 and runs out at higher zooms.
+2. **Over-zoom above z17 is unreliable.** deck is documented to over-zoom past `maxZoom`
+   (`zoom > maxZoom` displays `maxZoom` tiles), but with the scheme mismatch above this
+   did not render dependably in testing; a `visibleMaxZoom` cap hid tiles entirely.
+3. **Automated verification is flaky** under headless SwiftShader (WebGL context is
+   intermittent), so visual spot-checks are needed on a real GPU.
+
+### To make the WebGL path production-worthy
+
+- Build a **512-scheme tileset** (e.g. `tippecanoe -y` / `-S 512`, or `tileset` with
+  `tileSize: 512`) so deck's indexing matches the tiles, or host the tiles as PMTiles.
+- Or move to **MapLibre GL JS**, whose zoom/tile scheme already matches its tiles and which
+  handles over-zoom natively.
+- Then re-run the benchmark plan below on real hardware and decide whether to make WebGL
+  the default.
+
 ## Benchmark plan
 
 Measure before/after on the same machine and viewport, with all layers on:
