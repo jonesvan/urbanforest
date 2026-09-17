@@ -19,7 +19,7 @@ $h = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES);
 </head>
 <body>
 <header class="topbar">
-    <h1><a href="/" style="color:inherit;text-decoration:none">urbanforest</a></h1>
+    <h1 class="brand"><a href="/">urbanforest</a></h1>
     <span class="tagline">Trees API documentation</span>
     <nav class="topnav"><a href="/">&larr; Back to map</a></nav>
 </header>
