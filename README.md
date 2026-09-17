@@ -129,7 +129,9 @@ curl "https://urbanforest.fly.dev/api/trees/?bbox=9.93,51.53,9.94,51.54&limit=3"
 ```
 
 It is backed by gzipped per-tile GeoJSON under `public/data/trees/`, built with
-`npm run tiles:trees`. Full reference: [`docs/api.md`](docs/api.md).
+`npm run tiles:trees`. Rendered documentation with a live "try it" form:
+**https://urbanforest.fly.dev/api/** (source [`public/api/index.php`](public/api/index.php));
+full reference: [`docs/api.md`](docs/api.md).
 
 ## Deploy
 

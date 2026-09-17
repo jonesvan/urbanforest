@@ -148,3 +148,252 @@ body {
     font-size: 0.82rem;
     margin: 0.5rem 0.7rem;
 }
+
+.topnav {
+    margin-left: auto;
+    font-size: 0.85rem;
+}
+
+.topnav a {
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.topnav a:hover {
+    border-color: #fff;
+}
+
+/* API documentation page */
+.doc {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 1.75rem 1.25rem 4rem;
+}
+
+.doc-inner {
+    max-width: 54rem;
+    margin: 0 auto;
+}
+
+.doc h1 {
+    margin: 0 0 0.4rem;
+    font-size: 1.7rem;
+    letter-spacing: -0.01em;
+}
+
+.doc .lead {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: #414a44;
+    line-height: 1.6;
+}
+
+.doc h2 {
+    margin: 2rem 0 0.6rem;
+    font-size: 1.08rem;
+    color: var(--green-dark);
+}
+
+.doc h3 {
+    margin: 1.4rem 0 0.3rem;
+    font-size: 0.95rem;
+}
+
+.doc p,
+.doc li {
+    line-height: 1.65;
+}
+
+.doc a {
+    color: var(--green-dark);
+}
+
+.doc code {
+    background: #eef2ef;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.86em;
+}
+
+.doc pre {
+    position: relative;
+    margin: 0.6rem 0 1rem;
+    padding: 0.9rem 1rem;
+    background: #f5f7f5;
+    border: 1px solid #e1e7e1;
+    border-radius: 8px;
+    overflow: auto;
+    font-size: 0.83rem;
+    line-height: 1.5;
+}
+
+.doc pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+}
+
+.doc table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.6rem 0 1rem;
+    font-size: 0.88rem;
+}
+
+.doc th,
+.doc td {
+    text-align: left;
+    padding: 0.5rem 0.65rem;
+    border-bottom: 1px solid #e6ebe6;
+    vertical-align: top;
+}
+
+.doc th {
+    background: #f3f6f3;
+    color: #2c3b31;
+    font-weight: 600;
+}
+
+.endpoint {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+    padding: 0.75rem 0.9rem;
+    background: #0f2a1d;
+    color: #eaf4ee;
+    border-radius: 9px;
+}
+
+.endpoint .method {
+    background: var(--green);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    padding: 0.18rem 0.45rem;
+    border-radius: 4px;
+}
+
+.endpoint code {
+    background: transparent;
+    color: #eaf4ee;
+    padding: 0;
+    font-size: 0.85rem;
+}
+
+.copy {
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+}
+
+.copy:hover {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+.copy-inline {
+    margin: 0;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    color: #2c3b31;
+    background: #e7eee7;
+    border-color: #cdd9cd;
+}
+
+.copy-inline:hover {
+    background: #d8e4d8;
+}
+
+.try {
+    border: 1px solid #dfe7df;
+    border-radius: 10px;
+    padding: 1rem;
+    background: #fbfdfb;
+}
+
+.try form {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.try label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #3a463d;
+}
+
+.try input {
+    border: 1px solid #c9d4cb;
+    border-radius: 6px;
+    padding: 0.45rem 0.55rem;
+    font: inherit;
+    font-size: 0.85rem;
+}
+
+.try input#bbox {
+    width: 22rem;
+    max-width: 100%;
+}
+
+.try input#limit {
+    width: 6rem;
+}
+
+.btn {
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 0.95rem;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background: var(--green-dark);
+}
+
+.status {
+    margin-top: 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.status.ok {
+    color: var(--green-dark);
+}
+
+.status.err {
+    color: #b02a2a;
+}
+
+.try pre {
+    max-height: 22rem;
+    margin-top: 0.5rem;
+}
+
+.doc footer {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e6ebe6;
+    font-size: 0.8rem;
+    color: #5a6b5f;
+}

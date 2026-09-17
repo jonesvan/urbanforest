@@ -3,6 +3,8 @@
 Read-only HTTP API for the detected individual trees (LiDAR crown centroids). No key,
 CORS enabled.
 
+Rendered version with a live "try it" form: **https://urbanforest.fly.dev/api/**.
+
 ```
 GET /api/trees/?bbox=minLon,minLat,maxLon,maxLat[&limit=1000]
 ```

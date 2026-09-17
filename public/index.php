@@ -58,6 +58,7 @@ $appSettings = [
 <header class="topbar">
     <h1><?= htmlspecialchars($config['app_name']) ?></h1>
     <span class="tagline">Street trees from ESA Copernicus Urban Atlas STL &amp; OpenStreetMap</span>
+    <nav class="topnav"><a href="api/">Trees API</a></nav>
 </header>
 
 <div id="map"></div>
