@@ -102,6 +102,7 @@ scripts/
   fetch-osm-trees.mjs Download individual OSM trees as GeoJSON points
 docs/
   data-access.md      How to obtain the STL data
+  tree-detection.md   Scope for detecting every individual tree from imagery
 config.php            Shared configuration
 ```
 
@@ -113,5 +114,6 @@ Leaflet.
 ## Goals
 
 - Show **all individual trees** on the map (OSM), backed by satellite-derived tree patches (Copernicus STL).
+- Detect the trees OSM misses from open 20 cm aerial imagery — see [`docs/tree-detection.md`](docs/tree-detection.md).
 - Enable comparison of Copernicus STL against OpenStreetMap tree coverage.
 - Provide reusable open data exports (GeoJSON).
