@@ -107,6 +107,22 @@ the map shows data without rerunning the pipeline.
 
 The map view can be set via URL, e.g. `?lat=51.5336&lng=9.9352&zoom=16`.
 
+## Deploy
+
+Deployed to Fly.io: **https://urbanforest.fly.dev**
+
+- `Dockerfile` — `php:8.4-apache`, DocumentRoot `public/`, gzip for JSON.
+- `fly.toml` — app `urbanforest`, region `fra`, auto stop/start, 256 MB.
+- `.github/workflows/deploy.yml` — deploys on every push to `main` (and on demand)
+  with `flyctl deploy --remote-only`.
+
+One-time setup (already done for this repo):
+
+```bash
+flyctl apps create urbanforest
+flyctl tokens create deploy --app urbanforest | gh secret set FLY_API_TOKEN --repo jonesvan/urbanforest
+```
+
 ## Layout
 
 ```
