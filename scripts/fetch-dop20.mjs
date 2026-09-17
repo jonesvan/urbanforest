@@ -1,21 +1,19 @@
 #!/usr/bin/env node
-// Fetch LGLN OpenGeoData DOP20 orthophoto tiles covering a WGS84 bounding box.
+// Fetch LGLN OpenGeoData DOP20 orthophoto tiles covering a WGS84 bounding box
+// via the LGLN STAC API (public Cloud-Optimized GeoTIFFs, latest vintage per tile).
 //
 // Usage:
-//   node scripts/fetch-dop20.mjs --bbox=51.520,9.915,51.545,9.955 [--rgbi] [--out-dir=data-src/dop20]
+//   node scripts/fetch-dop20.mjs --bbox=51.520,9.915,51.545,9.955 [--rgbi] [--date=2025-03-04] [--list]
 //
-// The DOP20 download index (52k features) is cached under data-src/.
+// STAC: https://dop.stac.lgln.niedersachsen.de/collections/DOP
 
 import { createWriteStream } from 'node:fs';
-import { access, mkdir, readFile, rename, rm, stat } from 'node:fs/promises';
+import { access, mkdir, rename, rm, stat } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
 import { basename, join } from 'node:path';
-import proj4 from 'proj4';
 
-const INDEX_URL = 'https://single-datasets.opengeodata.lgln.niedersachsen.de/pro-download-indices/dop/lgln-opengeodata-dop20.geojson';
-const INDEX_CACHE = 'data-src/dop20-index.geojson';
-
-proj4.defs('EPSG:25832', '+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+const STAC = 'https://dop.stac.lgln.niedersachsen.de';
+const COLLECTION = 'DOP';
 
 function parseArgs(argv) {
     const args = {};
@@ -50,73 +48,74 @@ async function download(url, path) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const bbox = String(args.bbox ?? '51.520,9.915,51.545,9.955').split(',').map(Number);
-if (bbox.length !== 4 || bbox.some(Number.isNaN)) {
+const bboxInput = String(args.bbox ?? '51.520,9.915,51.545,9.955').split(',').map(Number);
+if (bboxInput.length !== 4 || bboxInput.some(Number.isNaN)) {
     console.error('error: --bbox must be minLat,minLon,maxLat,maxLon');
     process.exit(2);
 }
-const [minLat, minLon, maxLat, maxLon] = bbox;
-const variant = args.rgbi ? 'rgbi' : 'rgb';
+const [minLat, minLon, maxLat, maxLon] = bboxInput;
+
+const variant = args.rgbi ? 'dop20_rgbi' : 'dop20_rgb';
 const outDir = args['out-dir'] ?? 'data-src/dop20';
 
-// WGS84 bbox -> EPSG:25832 envelope
-const corners = [
-    [minLon, minLat], [minLon, maxLat], [maxLon, minLat], [maxLon, maxLat],
-].map(([lon, lat]) => proj4('EPSG:4326', 'EPSG:25832', [lon, lat]));
-const minX = Math.min(...corners.map((c) => c[0]));
-const maxX = Math.max(...corners.map((c) => c[0]));
-const minY = Math.min(...corners.map((c) => c[1]));
-const maxY = Math.max(...corners.map((c) => c[1]));
-
-await mkdir('data-src', { recursive: true });
-if (!(await exists(INDEX_CACHE))) {
-    console.error('downloading DOP20 index (~40 MB) ...');
-    await download(INDEX_URL, INDEX_CACHE);
+// STAC bbox order is minLon,minLat,maxLon,maxLat
+const url = `${STAC}/collections/${COLLECTION}/items?bbox=${minLon},${minLat},${maxLon},${maxLat}&limit=100`;
+const response = await fetch(url, { headers: { Accept: 'application/json' } });
+if (!response.ok) {
+    console.error(`error: STAC request failed (HTTP ${response.status})`);
+    process.exit(1);
 }
-
-const index = JSON.parse(await readFile(INDEX_CACHE, 'utf8'));
-
-const intersecting = index.features.filter((feature) => {
-    const xs = feature.geometry.coordinates[0].map((c) => c[0]);
-    const ys = feature.geometry.coordinates[0].map((c) => c[1]);
-    const tMinX = Math.min(...xs);
-    const tMaxX = Math.max(...xs);
-    const tMinY = Math.min(...ys);
-    const tMaxY = Math.max(...ys);
-    return tMaxX >= minX && tMinX <= maxX && tMaxY >= minY && tMinY <= maxY;
-});
-
-// The index lists one feature per tile and vintage; keep the most recent per tile.
-const latestByTile = new Map();
-for (const feature of intersecting) {
-    const { tile_id: tileId, Aktualitaet: vintage } = feature.properties;
-    const current = latestByTile.get(tileId);
-    if (!current || String(vintage) > String(current.properties.Aktualitaet)) {
-        latestByTile.set(tileId, feature);
-    }
-}
-const selected = [...latestByTile.values()];
-
-if (selected.length === 0) {
-    console.error('error: no DOP20 tiles intersect the bbox');
+const items = (await response.json()).features ?? [];
+if (items.length === 0) {
+    console.error('error: no DOP items intersect the bbox');
     process.exit(1);
 }
 
-console.log(`bbox (EPSG:4326): ${bbox.join(', ')}`);
-console.log(`bbox (EPSG:25832): ${minX.toFixed(0)}, ${minY.toFixed(0)}, ${maxX.toFixed(0)}, ${maxY.toFixed(0)}`);
-console.log(`tiles:  ${selected.length} (${variant})`);
+// id = dop20rgbi_32_566_5710_2_ni_2025-03-04 -> tile key 32_566_5710, keep newest
+const product = String(args.product ?? 'dop20');
+const tileKey = (id) => id.replace(/^dop\d+rgbi_/, '').replace(/_\d{4}-\d{2}-\d{2}$/, '');
+const selection = new Map();
+for (const item of items) {
+    if (!item.id.startsWith(product)) continue;
+    const key = tileKey(item.id);
+    const datetime = String(item.properties?.datetime ?? '');
+    const current = selection.get(key);
+    if (!current || datetime > current.datetime) selection.set(key, { item, datetime });
+}
+
+const chosen = [...selection.values()];
+if (args.date) {
+    const filtered = chosen.filter((entry) => entry.datetime.startsWith(String(args.date)));
+    if (filtered.length === 0) {
+        console.error(`error: no tiles for date ${args.date}`);
+        process.exit(1);
+    }
+    chosen.length = 0;
+    chosen.push(...filtered);
+}
+
+if (args.list) {
+    for (const { item, datetime } of chosen) {
+        console.log(`${item.id}  ${datetime.slice(0, 10)}  ${item.assets[variant]?.href}`);
+    }
+    process.exit(0);
+}
+
+console.log(`bbox (EPSG:4326): ${minLat}, ${minLon}, ${maxLat}, ${maxLon}`);
+console.log(`tiles:  ${chosen.length} (${variant})`);
 
 await mkdir(outDir, { recursive: true });
 
-for (const feature of selected) {
-    const url = feature.properties[variant];
-    const target = join(outDir, basename(url));
+for (const { item, datetime } of chosen) {
+    const href = item.assets[variant]?.href;
+    if (!href) throw new Error(`item ${item.id} has no ${variant} asset`);
+    const target = join(outDir, basename(href));
     if (!args.force && (await exists(target))) {
-        console.log(`skip    ${basename(url)}`);
+        console.log(`skip    ${basename(href)}`);
         continue;
     }
-    process.stdout.write(`get     ${basename(url)} ... `);
-    await download(url, target);
+    process.stdout.write(`get     ${basename(href)} (${datetime.slice(0, 10)}) ... `);
+    await download(href, target);
     console.log('ok');
 }
 

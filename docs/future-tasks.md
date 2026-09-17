@@ -66,8 +66,8 @@ the thing we actually want (individual trees vs. patches).
 | --- | --- | --- | --- |
 | OSM `natural=tree` (current) | Open, attributed, has species sometimes | Incomplete and uneven; volunteer-driven | In use |
 | **Municipal tree cadastre** (Baumkataster) | Authoritative, species/age/height, per-tree | Not always open; often WFS/GeoJSON; coverage limited to public trees | **Investigate** for Göttingen / Lower Saxony |
-| **LiDAR CHM** (DOM1 − DGM1) | Leaf-independent, complete canopy, open | Crowns, not species; needs segmentation | Recommended next |
-| **bDOM20 − DGM1** (20 cm image-based DSM) | Leaf-independent heights, 20 cm, open COG via STAC | Photogrammetric, weaker over bare deciduous crowns | Recommended next |
+| **LiDAR CHM** (DOM1 − DGM1) | Leaf-independent, complete canopy, open | Crowns, not species; needs segmentation | **Validated** (88.8% OSM agreement) |
+| bDOM20 − DGM1 (20 cm image DSM) | 20 cm heights, open COG via STAC | Photogrammetric — **fails over bare leaf-off deciduous trees** (median 0.4 m at OSM trees) | Rejected |
 | Commercial VHR imagery + detection | Leaf-on possible, high detail | Licensing/cost | Not open |
 | National/regional inventories | Authoritative where they exist | Rarely per-tree, licence varies | Investigate |
 
@@ -143,10 +143,10 @@ leaf-off imagery (see `docs/tree-detection.md`).
 | # | Task | Impact | Effort |
 | --- | --- | --- | --- |
 | 1 | Canvas renderer + clustering + gzip | High | S |
-| 2 | CHM detection: bDOM20 − DGM1 (20 cm) | High | L |
+| 2 | Tune CHM crown detector (over-merge/splitting) + vector tiles for full-city | High | L |
 | 3 | Investigate municipal tree cadastre | High | S |
 | 4 | Leaf-on imagery survey (gating for imagery models) | High | S |
 | 5 | Vector tiles / FlatGeobuf delivery | Medium | M–L |
-| 6 | Labelled reference set + evaluation | Medium | M |
+| 6 | Labelled reference set + evaluation (P/R/F1, not just OSM agreement) | Medium | M |
 | 7 | Licensing/attribution panel + provenance fields | Medium | S |
 | 8 | Python lockfile + CI | Low | S |

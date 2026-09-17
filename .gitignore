@@ -20,6 +20,7 @@ public/data/*.geojson
 # ...except the committed sample datasets
 !public/data/gottingen-street-trees.geojson
 !public/data/gottingen-trees.geojson
+!public/data/gottingen-crowns-pilot.geojson
 
 .DS_Store
 

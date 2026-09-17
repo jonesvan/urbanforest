@@ -206,20 +206,48 @@ Why it fails:
 Conclusion: **leaf-off RGB + a summer-pretrained model is the wrong combination.** The
 detection approach is not discarded, but it needs a leaf-independent or leaf-on input.
 
+## M3 result (Göttingen) — LiDAR CHM works
+
+Implemented: LGLN STAC fetch → canopy height model → watershed crown detection.
+
+- **Source:** STAC APIs `dom.stac.lgln.niedersachsen.de` (DOM1) and
+  `dgm.stac.lgln.niedersachsen.de` (DGM1), public COGs, 1 m, same 1 km tile grid.
+- **CHM = DOM1 − DGM1** (`scripts/build-chm.py`), 12 tiles over ~12 km².
+- **Detection** (`scripts/detect-crowns.py`): gaussian smoothing → local maxima seeds →
+  watershed → polygonise → area/size filter → drop crowns whose centroid is inside an OSM
+  building footprint.
+
+Validation on a 0.8 km² tile (before building masking):
+
+| Method | OSM trees inside a detected crown |
+| --- | --- |
+| DeepForest on leaf-off DOP20 (M1) | **11%** |
+| LiDAR CHM + watershed (M3) | **88.8%** |
+
+Key finding: **bDOM20 does not help.** The 20 cm image-based DSM (photogrammetry) also
+fails over bare deciduous trees — median CHM at OSM tree locations was only **0.4 m**
+(vs **12.9 m** for LiDAR DOM1−DGM1). LiDAR is leaf-independent; photogrammetry is not.
+
+Caveats / known issues:
+- Crowns are **over-merged**: median crown area ≈ 78 m² (~10 m diameter); tuning
+  `--min-distance`, markers and splitting is needed.
+- Residual building false positives remain after the OSM footprint mask (footprints are
+  incomplete; overhanging crowns are dropped by the centroid rule).
+- Full-city output is ~46,800 crowns / **~30 MB** GeoJSON — too large to serve as-is
+  (needs vector tiles, see `future-tasks.md`).
+
+Served as a pilot: `public/data/gottingen-crowns-pilot.geojson` (4,626 crowns over ~1.6 km²,
+central Göttingen).
+
 ## Corrected path
 
-1. **LiDAR CHM (approach B) — primary.** DOM1 − DGM1 gives canopy height regardless of
-   foliage; local maxima + `detectree2`/watershed delineates crowns. This is the most
-   promising route for the leaf-off reality of German DOP20 and is the recommended next
-   milestone (M3).
-2. **Leaf-on imagery** — if a leaf-on VHR orthophoto can be licensed, the imagery approach
-   becomes viable; no open sub-metre leaf-on source was found for Göttingen.
-3. **Fine-tune** DeepForest on local **leaf-off** labels if the RGB route is kept — needs
-   several hundred manually delineated crowns and accepts degraded accuracy.
+1. **LiDAR CHM (approach B) — validated.** DOM1 − DGM1 with watershed/`detectree2` is the
+   right leaf-independent route and already reaches 88.8% agreement with OSM.
+2. **Leaf-on imagery** — no open sub-metre leaf-on source was found for Göttingen; would be
+   required for any imagery-based model.
+3. **Fine-tune** DeepForest on local **leaf-off** labels only if the RGB route is kept.
 
 ## Next step
 
-Implement the **CHM route** via the LGLN STAC APIs: fetch `BDOM` + `DGM` COG windows for
-Göttingen, build `CHM = bDOM20 − DGM1`, detect crown tops and delineate with
-watershed/`detectree2`, validate against OSM, then emit `gottingen-crowns.geojson`. Keep
-the DOP20 tiles for the basemap/visual check.
+Tune the CHM detector (reduce over-merging, split touching crowns, add ALKIS/LoD2 building
+masking), then serve the full-city crowns via **vector tiles** instead of a 30 MB GeoJSON.
