@@ -67,6 +67,7 @@ the thing we actually want (individual trees vs. patches).
 | OSM `natural=tree` (current) | Open, attributed, has species sometimes | Incomplete and uneven; volunteer-driven | In use |
 | **Municipal tree cadastre** (Baumkataster) | Authoritative, species/age/height, per-tree | Not always open; often WFS/GeoJSON; coverage limited to public trees | **Investigate** for Göttingen / Lower Saxony |
 | **LiDAR CHM** (DOM1 − DGM1) | Leaf-independent, complete canopy, open | Crowns, not species; needs segmentation | Recommended next |
+| **bDOM20 − DGM1** (20 cm image-based DSM) | Leaf-independent heights, 20 cm, open COG via STAC | Photogrammetric, weaker over bare deciduous crowns | Recommended next |
 | Commercial VHR imagery + detection | Leaf-on possible, high detail | Licensing/cost | Not open |
 | National/regional inventories | Authoritative where they exist | Rarely per-tree, licence varies | Investigate |
 
@@ -99,7 +100,7 @@ leaf-off imagery (see `docs/tree-detection.md`).
 ### 3.1 Alternatives
 | Approach | Input | Fit here | Notes |
 | --- | --- | --- | --- |
-| **CHM local maxima + watershed / `detectree2`** | LiDAR DOM1−DGM1 | **Best next** | Leaf-independent; well-established for airborne LiDAR |
+| **CHM local maxima + watershed / `detectree2`** | LiDAR/DSM CHM (DOM1−DGM1 or bDOM20−DGM1) | **Best next** | Leaf-independent; bDOM20 gives 20 cm heights |
 | DeepForest fine-tuned on local labels | Leaf-off DOP20 | Medium | Needs ~hundreds of delineated crowns; accuracy degrades without foliage |
 | SAM / DINOv2 / foundation segmentation + prompt | VHR imagery | Explore | Strong generalisation; needs tuning and labels |
 | Mask R-CNN / YOLOv8-seg | Imagery | Explore | Need local training data |
@@ -142,7 +143,7 @@ leaf-off imagery (see `docs/tree-detection.md`).
 | # | Task | Impact | Effort |
 | --- | --- | --- | --- |
 | 1 | Canvas renderer + clustering + gzip | High | S |
-| 2 | LiDAR CHM detection (M3) | High | L |
+| 2 | CHM detection: bDOM20 − DGM1 (20 cm) | High | L |
 | 3 | Investigate municipal tree cadastre | High | S |
 | 4 | Leaf-on imagery survey (gating for imagery models) | High | S |
 | 5 | Vector tiles / FlatGeobuf delivery | Medium | M–L |

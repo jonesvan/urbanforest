@@ -43,6 +43,39 @@ optionally LiDAR). This is a remote-sensing segmentation task, not a download.
 - **OSM** (`natural=tree`, `highway`, `building`) for masking and, crucially, for validation.
 - **Copernicus STL** as a coarse prior: crowns inside STL patches are dense; outside are sparse.
 
+## Update: LGLN STAC APIs (better than the download index)
+
+The LGLN OpenGeoData DOP page (and its siblings) back onto **STAC APIs** with public
+Cloud-Optimized GeoTIFF (COG) assets — this is a cleaner and fresher route than the static
+`lgln-opengeodata-dop20.geojson` download index used in M1.
+
+| STAC API | Collection | Content | Temp. range |
+| --- | --- | --- | --- |
+| `https://dop.stac.lgln.niedersachsen.de` | `DOP` | DOP RGBI 20 cm | 2012-03-15 … 2026-05-25 |
+| `https://bdom.stac.lgln.niedersachsen.de` | `BDOM` | **bDOM20** — image-based surface model, 20 cm, float32 heights | 2021-03-29 … 2026-05-25 |
+| `https://dom.stac.lgln.niedersachsen.de` | `dom1` | DOM1 surface model, 1 m | 2010 … 2025 |
+| `https://dgm.stac.lgln.niedersachsen.de` | `dgm1` | DGM1 terrain model, 1 m | 2010 … 2025 |
+
+Verified facts:
+- Items are searchable by `bbox`; assets are direct, **public** HTTPS COG URLs (no account),
+  e.g. `https://dop20-rgb.s3.eu-de.cloud-object-storage.appdomain.cloud/325665710/2025-03-04/dop20rgb_32_566_5710_2_ni_2025-03-04.tif`.
+- DOP tile: 10 000 × 10 000 px, 20 cm, uint8 RGB/RGBI, EPSG:25832, ~26 MB.
+- bDOM20 tile: 5 000 × 5 000 px (1 km), 20 cm, float32 (heights ≈ 210–235 m), ~146 MB.
+- **Newer vintages exist than M1 used**: e.g. `2025-03-04` (M1 used the 2022 index entry).
+
+Why this matters:
+- **bDOM20 is a 20 cm surface model** — far better than DOM1 (1 m) for a canopy height model
+  (CHM = bDOM20 − DGM1). This is the most promising route for individual-tree crowns.
+- COGs allow HTTP range reads, so a pipeline can fetch only the windows it needs instead of
+  whole tiles.
+
+Caveat (unchanged): the DOP flights are still **leaf-off** (all vintages are Mar–Apr), so
+imagery-based crown detection stays unreliable. bDOM20 is photogrammetric and therefore also
+affected over bare deciduous trees, but is more robust than RGB-only detection.
+
+**Recommended:** switch the fetch step to the DOP/bDOM STAC APIs (bbox query → COG assets)
+and build the CHM from `bDOM20 − DGM1` before attempting segmentation.
+
 ## Approaches
 
 ### A. Imagery-only deep learning — recommended v1
@@ -186,6 +219,7 @@ detection approach is not discarded, but it needs a leaf-independent or leaf-on 
 
 ## Next step
 
-Implement the **LiDAR CHM route**: obtain DOM1/DGM1 for Göttingen, build `CHM = DOM1 −
-DGM1`, detect crown tops and delineate with watershed/`detectree2`, validate against OSM,
-then emit `gottingen-crowns.geojson`. Keep the DOP20 tiles for the basemap/visual check.
+Implement the **CHM route** via the LGLN STAC APIs: fetch `BDOM` + `DGM` COG windows for
+Göttingen, build `CHM = bDOM20 − DGM1`, detect crown tops and delineate with
+watershed/`detectree2`, validate against OSM, then emit `gottingen-crowns.geojson`. Keep
+the DOP20 tiles for the basemap/visual check.
