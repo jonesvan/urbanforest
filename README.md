@@ -8,7 +8,7 @@ A web app that visualizes street trees in urban areas, combining [ESA Copernicus
 
 - **Tree patches** from the **Urban Atlas Street Tree Layer (STL)** — a Copernicus Land Monitoring Service product derived from high-resolution satellite imagery, mapping contiguous rows and patches of trees in European Functional Urban Areas ("Erfasst sogar Einzel- und Straßenbäume in städtischen Gebieten").
 - **Individual trees** from **OpenStreetMap** (`natural=tree` nodes) — one point per mapped tree.
-- **Detected tree crowns** from **LiDAR** (`DOM1 − DGM1` canopy height model + watershed) — served as MVT vector tiles.
+- **Detected tree crowns** from **LiDAR** (`DOM1 − DGM1` canopy height model + watershed) — served as MVT vector tiles and as a read-only GeoJSON API (`/api/trees/`).
 
 > The STL is a *patch* product: its Minimum Mapping Unit is 0.05 ha (500 m²) with a 10 m minimum width, so a lone tree only appears where it reaches that size. The goal of showing **every individual tree** is therefore served by the OSM point layer, with the STL providing the satellite-derived picture of tree cover.
 
@@ -91,6 +91,7 @@ node scripts/fetch-osm-buildings.mjs --bbox=51.520,9.915,51.545,9.955 --out=data
 .venv/bin/python scripts/detect-crowns.py --input-dir data-src/chm-dom1 \
   --buildings data-src/buildings.geojson --output data-src/gottingen-crowns-full.geojson
 npm run tiles -- --input=data-src/gottingen-crowns-full.geojson --out-dir=public/tiles/crowns
+npm run tiles:trees -- --input=data-src/gottingen-crowns-full.geojson --out-dir=public/data/trees
 ```
 
 Serve:
@@ -103,10 +104,32 @@ Then open http://localhost:8000.
 
 Göttingen is pre-generated and committed — `public/data/gottingen-street-trees.geojson`
 (STL 2021, 8,824 tree patches), `public/data/gottingen-trees.geojson` (23,746 individual
-OSM trees) and `public/tiles/crowns/` (65,835 LiDAR-detected crowns as vector tiles) — so
-the map shows data without rerunning the pipeline.
+OSM trees) and `public/tiles/crowns/` (**905,088 LiDAR-detected crowns** covering the whole
+city boundary, as vector tiles) — so the map shows data without rerunning the pipeline.
+The same crowns back the public API as gzipped per-tile GeoJSON in `public/data/trees/`.
 
 The map view can be set via URL, e.g. `?lat=51.5336&lng=9.9352&zoom=16`.
+
+## Public API
+
+Read-only GeoJSON API for the detected individual trees (LiDAR crown centroids):
+
+```
+GET /api/trees/?bbox=minLon,minLat,maxLon,maxLat[&limit=1000]
+```
+
+- `bbox` (required) — WGS84 degrees, `minLon,minLat,maxLon,maxLat`.
+- `limit` — maximum features to return (default 1000, max 10000).
+- Response: `application/geo+json` `FeatureCollection`; each feature is one detected
+  crown located at its centroid, with `height_max` (m) and `area_m2` properties.
+- CORS enabled (`Access-Control-Allow-Origin: *`), no key required.
+
+```bash
+curl "https://urbanforest.fly.dev/api/trees/?bbox=9.93,51.53,9.94,51.54&limit=3"
+```
+
+It is backed by gzipped per-tile GeoJSON under `public/data/trees/`, built with
+`npm run tiles:trees`.
 
 ## Deploy
 
@@ -129,9 +152,11 @@ flyctl tokens create deploy --app urbanforest | gh secret set FLY_API_TOKEN --re
 ```
 public/            Web root
   index.php        Entry point, renders the map page
+  api/trees/       Public read-only trees API (GeoJSON)
   assets/css/      Styles
   assets/js/       MapLibre GL JS map logic
   data/            Preprocessed GeoJSON layers (generated)
+  data/trees/      Gzipped per-tile GeoJSON backing /api/trees/ (generated)
 public/tiles/
   crowns/          Vector tiles (MVT) for the detected tree crowns (z13–z17, polygons)
   crown-points/    Low-zoom crown centroids (z6–z12), drawn as dots
@@ -144,6 +169,7 @@ scripts/
   build-chm.py           Build a canopy height model (DOM1 - DGM1) from STAC COGs
   detect-crowns.py       Detect individual tree crowns from a CHM (watershed)
   build-crown-tiles.mjs  Tile a crown GeoJSON into MVT vector tiles
+  build-tree-tiles.mjs   Tile crowns into gzipped per-tile GeoJSON for the API
   detect-trees.py        DeepForest RGB detection (experimental, failed on leaf-off)
 docs/
   data-access.md      How to obtain the STL data
@@ -162,8 +188,9 @@ Detection route (see [`docs/tree-detection.md`](docs/tree-detection.md)):
 - RGB crown detection (DeepForest on DOP20) failed because the flights are leaf-off.
 - **LiDAR CHM (`DOM1 − DGM1`) + watershed works** — 88% of OSM trees fall inside a
   detected crown (vs 11% for RGB), with OSM building footprints used as a mask.
-- Crowns are served as **vector tiles** (`public/tiles/crowns`, 65,835 crowns) so the
-  browser only fetches the tiles in view instead of a 41 MB GeoJSON.
+- Crowns are served as **vector tiles** (`public/tiles/crowns`, 905,088 crowns across the
+  city boundary, zooms 13–17) so the browser only fetches the tiles in view, and exposed
+  through a public GeoJSON API at `/api/trees/`.
 
 ## Goals
 

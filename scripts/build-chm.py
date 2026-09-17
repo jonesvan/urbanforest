@@ -28,6 +28,10 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--bbox", required=True, help="minLat,minLon,maxLat,maxLon (WGS84)")
     p.add_argument("--out-dir", default="data-src/chm")
+    p.add_argument("--keys-file", default=None,
+                   help="JSON file with a list of '<zone>_<easting>_<northing>' tile keys; "
+                        "only these tiles are built")
+    p.add_argument("--force", action="store_true", help="rebuild tiles that already exist")
     p.add_argument("--upper-stac", default="https://dom.stac.lgln.niedersachsen.de")
     p.add_argument("--upper-collection", default="dom1")
     p.add_argument("--lower-stac", default="https://dgm.stac.lgln.niedersachsen.de")
@@ -39,9 +43,14 @@ def parse_args():
 def stac_items(base, collection, bbox):
     min_lat, min_lon, max_lat, max_lon = bbox
     url = (f"{base}/collections/{collection}/items"
-           f"?bbox={min_lon},{min_lat},{max_lon},{max_lat}&limit=100")
-    with urllib.request.urlopen(url, timeout=60) as response:
-        return json.load(response).get("features", [])
+           f"?bbox={min_lon},{min_lat},{max_lon},{max_lat}&limit=1000")
+    items = []
+    while url:
+        with urllib.request.urlopen(url, timeout=120) as response:
+            payload = json.load(response)
+        items.extend(payload.get("features", []))
+        url = next((l["href"] for l in payload.get("links", []) if l.get("rel") == "next"), None)
+    return items
 
 
 def latest_per_tile(items):
@@ -66,7 +75,14 @@ def main():
     upper = latest_per_tile(stac_items(args.upper_stac, args.upper_collection, bbox))
     lower = latest_per_tile(stac_items(args.lower_stac, args.lower_collection, bbox))
 
+    keys_filter = None
+    if args.keys_file:
+        with open(args.keys_file) as handle:
+            keys_filter = set(json.load(handle))
+
     tiles = sorted(set(upper) & set(lower))
+    if keys_filter is not None:
+        tiles = [key for key in tiles if key in keys_filter]
     if not tiles:
         raise SystemExit("error: no overlapping surface/terrain tiles for the bbox")
 
@@ -74,6 +90,11 @@ def main():
     print(f"tiles: {len(tiles)} -> {args.out_dir}")
 
     for key in tiles:
+        target = os.path.join(args.out_dir, f"chm_{key}.tif")
+        if not args.force and os.path.exists(target):
+            print(f"  {key}: exists, skipping")
+            continue
+
         upper_item, upper_date = upper[key]
         lower_item, lower_date = lower[key]
 
@@ -100,7 +121,6 @@ def main():
         chm[~np.isfinite(chm)] = 0.0
         chm = np.clip(chm, 0.0, args.max_height)
 
-        target = os.path.join(args.out_dir, f"chm_{key}.tif")
         with rasterio.open(
             target, "w", driver="GTiff", height=shape[0], width=shape[1], count=1,
             dtype="float32", crs=crs, transform=transform, nodata=0.0, compress="deflate",

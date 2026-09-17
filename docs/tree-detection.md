@@ -212,10 +212,12 @@ Implemented: LGLN STAC fetch → canopy height model → watershed crown detecti
 
 - **Source:** STAC APIs `dom.stac.lgln.niedersachsen.de` (DOM1) and
   `dgm.stac.lgln.niedersachsen.de` (DGM1), public COGs, 1 m, same 1 km tile grid.
-- **CHM = DOM1 − DGM1** (`scripts/build-chm.py`), 12 tiles over ~12 km².
+- **CHM = DOM1 − DGM1** (`scripts/build-chm.py`), **153 tiles over the whole Göttingen city
+  boundary** (~117 km², 1 April 2016 LiDAR), restricted to the tiles intersecting the city
+  polygon via `--keys-file`.
 - **Detection** (`scripts/detect-crowns.py`): gaussian smoothing → local maxima seeds →
   watershed → polygonise → area/size filter → drop crowns whose centroid is inside an OSM
-  building footprint.
+  building footprint (72,116 building polygons for the city).
 
 Validation on a 0.8 km² tile (before building masking):
 
@@ -234,11 +236,13 @@ Caveats / known issues:
   needed.
 - Residual building false positives remain after the OSM footprint mask (footprints are
   incomplete; overhanging crowns are dropped by the centroid rule).
-- Full-city output is ~65,800 crowns / ~20 MB GeoJSON (simplified 1.5 m) — served as
-  **MVT vector tiles** (`public/tiles/crowns`, zooms 13–17, 520 tiles, ~10 MB) so the
+- Full-city output is **905,088 crowns / ~261 MB GeoJSON** (simplified 1.5 m) — served as
+  **MVT vector tiles** (`public/tiles/crowns`, zooms 13–17, 5,731 tiles, ~133 MB) so the
   browser fetches only tiles in view. Crowns are rendered with the **SVG** tile renderer so
   they stay crisp at every zoom, and at low zooms small (sub-pixel) crowns are dropped
   during tiling to keep the SVG light (e.g. z13 keeps only crowns ≥ 120 m²).
+- The same crowns are exposed as a **read-only GeoJSON API** (`GET /api/trees/?bbox=...`),
+  backed by gzipped per-tile GeoJSON (`public/data/trees/`, `scripts/build-tree-tiles.mjs`).
 
 ## Corrected path
 
