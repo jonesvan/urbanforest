@@ -22,10 +22,10 @@ function parseArgs(argv) {
 const args = parseArgs(process.argv.slice(2));
 const input = args.input ?? 'data-src/gottingen-crowns-full.geojson';
 const outDir = args['out-dir'] ?? 'public/tiles/crowns';
-const minZoom = Number(args.minzoom ?? 11);
-const maxZoom = Number(args.maxzoom ?? 16);
+const minZoom = Number(args.minzoom ?? 13);
+const maxZoom = Number(args.maxzoom ?? 17);
 const layerName = args.layer ?? 'crowns';
-const tolerance = Number(args.tolerance ?? 2);
+const tolerance = Number(args.tolerance ?? 1.5);
 
 const lon2tile = (lon, z) => Math.floor(((lon + 180) / 360) * 2 ** z);
 const lat2tile = (lat, z) => {

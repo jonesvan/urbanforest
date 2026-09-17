@@ -36,7 +36,9 @@ def parse_args():
     p.add_argument("--min-distance", type=int, default=2, help="minimum distance between crown tops (px)")
     p.add_argument("--sigma", type=float, default=0.5, help="gaussian smoothing sigma (px)")
     p.add_argument("--buildings", default=None, help="GeoJSON of building footprints to exclude")
-    p.add_argument("--simplify", type=float, default=0.5, help="polygon simplification tolerance (m)")
+    p.add_argument("--simplify", type=float, default=1.5, help="polygon simplification tolerance (m)")
+    p.add_argument("--round", type=float, default=0.0,
+                   help="round the crown outline by this radius (m); slow, smooths the 1 m pixel staircase")
     return p.parse_args()
 
 
@@ -106,7 +108,15 @@ def main():
 
     if args.simplify:
         gdf.geometry = gdf.geometry.simplify(args.simplify, preserve_topology=True)
-        gdf = gdf[~gdf.geometry.is_empty]
+
+    if args.round:
+        # round-trip buffer rounds off the staircase edges from the 1 m raster
+        gdf.geometry = (
+            gdf.geometry.buffer(args.round, join_style="round", resolution=8)
+            .buffer(-args.round, join_style="round", resolution=8)
+        )
+
+    gdf = gdf[~gdf.geometry.is_empty]
 
     gdf = gdf.to_crs("EPSG:4326")
     gdf.geometry = set_precision(gdf.geometry, 1e-6)  # ~0.1 m, shrinks the file

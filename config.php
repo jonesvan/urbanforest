@@ -20,7 +20,7 @@ return [
             'label' => 'Detected tree crowns (LiDAR)',
             'url' => 'tiles/crowns/{z}/{x}/{y}.pbf',
             'min_zoom' => 13,
-            'max_zoom' => 15,
+            'max_zoom' => 17,
             'fill_color' => '#e67e22',
             'meta' => [
                 'Source' => 'LGLN OpenGeoData — DOM1 (surface) + DGM1 (terrain), airborne LiDAR',
