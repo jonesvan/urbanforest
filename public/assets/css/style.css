@@ -53,7 +53,7 @@ body {
     top: 4.2rem;
     right: 0.75rem;
     z-index: 900;
-    width: 15rem;
+    width: 18rem;
     max-height: calc(100vh - 5.5rem);
     overflow: auto;
     padding: 0.75rem 0.9rem;
@@ -99,6 +99,49 @@ body {
     padding: 0 0.2rem;
     border-radius: 3px;
     font-size: 0.78rem;
+}
+
+.layer-info {
+    margin: 0.15rem 0 0.45rem 1.35rem;
+    font-size: 0.7rem;
+    line-height: 1.35;
+}
+
+.layer-info summary {
+    cursor: pointer;
+    color: var(--green-dark);
+    font-weight: 600;
+    list-style: none;
+}
+
+.layer-info summary::before {
+    content: '▸ ';
+}
+
+.layer-info[open] summary::before {
+    content: '▾ ';
+}
+
+.layer-meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.1rem 0.45rem;
+    margin: 0.35rem 0 0;
+    color: #333;
+}
+
+.layer-meta dt {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.layer-meta dd {
+    margin: 0;
+}
+
+.layer-meta a {
+    color: var(--green-dark);
+    word-break: break-word;
 }
 
 .leaflet-popup-content {

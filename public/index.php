@@ -14,8 +14,28 @@ if (is_dir($dataDir)) {
             'name' => $name,
             'label' => ucwords(str_replace(['-', '_'], ' ', $name)),
             'url' => 'data/' . basename($file),
+            'meta' => $config['layer_meta'][$name] ?? $config['default_layer_meta'],
         ];
     }
+}
+
+function render_layer_meta(array $meta): string
+{
+    if ($meta === []) {
+        return '';
+    }
+    $html = '<dl class="layer-meta">';
+    foreach ($meta as $key => $value) {
+        $text = (string) $value;
+        if (preg_match('~^https?://~', $text)) {
+            $url = htmlspecialchars($text, ENT_QUOTES);
+            $cell = '<a href="' . $url . '" target="_blank" rel="noopener">' . $url . '</a>';
+        } else {
+            $cell = htmlspecialchars($text, ENT_QUOTES);
+        }
+        $html .= '<dt>' . htmlspecialchars((string) $key) . '</dt><dd>' . $cell . '</dd>';
+    }
+    return $html . '</dl>';
 }
 
 $appSettings = [
@@ -45,8 +65,8 @@ $appSettings = [
     <h2>Layers</h2>
     <?php if ($layers === [] && $config['tile_layers'] === []): ?>
         <p class="empty">
-            No data yet. Run <code>scripts/fetch-stl.php</code> and
-            <code>scripts/stl-to-geojson.sh</code> to populate <code>public/data/</code>.
+            No data yet. Run the pipeline in <code>scripts/</code> to populate
+            <code>public/data/</code> and <code>public/tiles/</code>.
         </p>
     <?php else: ?>
         <ul id="layer-list">
@@ -56,6 +76,10 @@ $appSettings = [
                         <input type="checkbox" data-layer-url="<?= htmlspecialchars($layer['url']) ?>" checked>
                         <?= htmlspecialchars($layer['label']) ?>
                     </label>
+                    <details class="layer-info">
+                        <summary>data &amp; model</summary>
+                        <?= render_layer_meta($layer['meta']) ?>
+                    </details>
                 </li>
             <?php endforeach; ?>
             <?php foreach ($config['tile_layers'] as $layer): ?>
@@ -64,6 +88,10 @@ $appSettings = [
                         <input type="checkbox" data-tile-layer="<?= htmlspecialchars($layer['name']) ?>" checked>
                         <?= htmlspecialchars($layer['label']) ?>
                     </label>
+                    <details class="layer-info">
+                        <summary>data &amp; model</summary>
+                        <?= render_layer_meta($layer['meta'] ?? []) ?>
+                    </details>
                 </li>
             <?php endforeach; ?>
         </ul>
