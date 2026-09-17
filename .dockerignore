@@ -1,0 +1,10 @@
+.git
+.github
+node_modules
+.venv
+__pycache__
+data-src
+lightning_logs
+docs
+.DS_Store
+*.md
