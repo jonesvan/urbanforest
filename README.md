@@ -100,9 +100,11 @@ scripts/
   fetch-stl.mjs       Download STL tree patches from Copernicus for an FUA
   convert-stl.mjs     Convert .fgb -> .geojson (EPSG:3035 -> 4326)
   fetch-osm-trees.mjs Download individual OSM trees as GeoJSON points
+  fetch-dop20.mjs     Download LGLN DOP20 orthophoto tiles for a bbox
+  detect-trees.py     DeepForest tree-crown detection (experimental, see docs)
 docs/
   data-access.md      How to obtain the STL data
-  tree-detection.md   Scope for detecting every individual tree from imagery
+  tree-detection.md   Scope + M1 results for detecting every individual tree
 config.php            Shared configuration
 ```
 
@@ -110,6 +112,12 @@ config.php            Shared configuration
 
 Working for Göttingen: STL tree patches and 23,746 individual OSM trees, rendered with
 Leaflet.
+
+**Detection experiment (unfinished):** the pretrained DeepForest crown model was run on
+LGLN DOP20 imagery, but the available flight is **leaf-off** (2022-03-03), so the
+detections are unreliable and are not served by the app. See
+[`docs/tree-detection.md`](docs/tree-detection.md) for the M1 result and the recommended
+LiDAR (DOM1−DGM1) route.
 
 ## Goals
 

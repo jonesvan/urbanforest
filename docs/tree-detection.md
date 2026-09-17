@@ -146,7 +146,46 @@ Detection is only useful if its accuracy is known.
 - DeepForest: MIT-licensed, cite the project and its underlying NEON-trained model.
 - Copernicus STL: © EEA / CLMS, DOI 10.2909/205691b3-7ae9-41dd-abf1-1fbf60d72c8c.
 
+## M1 baseline result (Göttingen) — negative
+
+M1 was implemented and run. The pipeline works; the **result is not usable** and must
+not be shown as tree data.
+
+What was done:
+- Fetched 6 DOP20 RGB tiles (2 km × 2 km, 10 000 × 10 000 px, 20 cm) for the city-centre
+  bbox `51.520,9.915,51.545,9.955` via `scripts/fetch-dop20.mjs` (~134 MB).
+- Ran the pretrained DeepForest tree-crown model (patch 400 px, overlap 0.1) via
+  `scripts/detect-trees.py`, georeferenced the boxes (EPSG:25832 → 4326).
+- Output: 17,353 boxes at score ≥ 0.3 (median box 35 m²), `data-src/gottingen-crowns-pilot.geojson`.
+
+Why it fails:
+- **The flight is leaf-off.** The available Göttingen DOP20 vintages are all
+  Jan–Apr (2013-04, 2016-01, 2019-03, 2022-03); the most recent is **2022-03-03**. Bare
+  deciduous trees have no detectable crown in RGB.
+- **Domain gap.** The pretrained model learned summer canopies on US NEON plots; on bare
+  trees it fires on roofs, shadows and street furniture instead.
+- **Poor agreement with OSM** in the pilot bbox: only **11%** of OSM trees fall inside a
+  detected crown; median distance from an OSM tree to the nearest crown is **14.7 m**.
+- Visual overlay confirms the boxes miss the OSM tree rows in the park and land on
+  buildings. Raising the score threshold to 0.5/0.7 removes almost everything (8/1 boxes
+  in the sample), so thresholding cannot rescue it.
+
+Conclusion: **leaf-off RGB + a summer-pretrained model is the wrong combination.** The
+detection approach is not discarded, but it needs a leaf-independent or leaf-on input.
+
+## Corrected path
+
+1. **LiDAR CHM (approach B) — primary.** DOM1 − DGM1 gives canopy height regardless of
+   foliage; local maxima + `detectree2`/watershed delineates crowns. This is the most
+   promising route for the leaf-off reality of German DOP20 and is the recommended next
+   milestone (M3).
+2. **Leaf-on imagery** — if a leaf-on VHR orthophoto can be licensed, the imagery approach
+   becomes viable; no open sub-metre leaf-on source was found for Göttingen.
+3. **Fine-tune** DeepForest on local **leaf-off** labels if the RGB route is kept — needs
+   several hundred manually delineated crowns and accepts degraded accuracy.
+
 ## Next step
 
-Implement **M1** for the Göttingen city bbox: a `scripts/detect-trees.mjs`/Python step that
-resolves DOP20 tiles, runs DeepForest, and emits `gottingen-crowns.geojson`.
+Implement the **LiDAR CHM route**: obtain DOM1/DGM1 for Göttingen, build `CHM = DOM1 −
+DGM1`, detect crown tops and delineate with watershed/`detectree2`, validate against OSM,
+then emit `gottingen-crowns.geojson`. Keep the DOP20 tiles for the basemap/visual check.

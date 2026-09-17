@@ -1,12 +1,18 @@
 # Node dependencies
 node_modules/
 
+# Python environment for the detection pipeline
+.venv/
+__pycache__/
+
 # Downloaded Copernicus source files
 data-src/
 *.fgb
 *.gpkg
 *.sqlite
 *.gdb/
+*.tif
+*.tiff
 
 # Generated web layers
 public/data/*.geojson
@@ -16,3 +22,6 @@ public/data/*.geojson
 !public/data/gottingen-trees.geojson
 
 .DS_Store
+
+# DeepForest/Lightning run logs
+lightning_logs/
