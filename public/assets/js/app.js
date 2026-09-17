@@ -123,7 +123,7 @@
             maxZoom: 19,
             interactive: true,
             vectorTileLayerStyles: styles,
-            rendererFactory: L.canvas.tile
+            rendererFactory: L.svg.tile
         });
 
         layer.on('click', function (event) {
