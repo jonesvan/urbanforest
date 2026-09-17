@@ -86,18 +86,13 @@ $appSettings = [
         <span class="panel-chevron" aria-hidden="true"></span>
     </div>
     <div class="panel-body" id="panel-body">
-    <?php if ($styleOptions || $config['aerial']): ?>
-        <label class="basemap-select">
-            <span>Base map</span>
-            <select id="basemap-select">
-                <?php foreach ($styleOptions as $name => $url): ?>
-                    <option value="<?= htmlspecialchars($name) ?>"<?= $name === $currentBasemap ? ' selected' : '' ?>><?= htmlspecialchars($config['map']['style_labels'][$name] ?? ucfirst($name)) ?></option>
-                <?php endforeach; ?>
-                <?php if ($config['aerial']): ?>
-                    <option value="aerial"<?= $currentBasemap === 'aerial' ? ' selected' : '' ?>><?= htmlspecialchars($config['aerial']['label']) ?></option>
-                <?php endif; ?>
-            </select>
-        </label>
+    <?php if ($config['aerial'] && $styleOptions): ?>
+        <div class="basemap-switch" role="group" aria-label="Base map">
+            <?php foreach ($styleOptions as $name => $url): ?>
+                <button type="button" class="basemap-option<?= $name === $currentBasemap ? ' is-active' : '' ?>" data-basemap="<?= htmlspecialchars($name) ?>"><?= htmlspecialchars($name === ($config['map']['default_style'] ?? '') ? 'Map' : ($config['map']['style_labels'][$name] ?? ucfirst($name))) ?></button>
+            <?php endforeach; ?>
+            <button type="button" class="basemap-option<?= $currentBasemap === 'aerial' ? ' is-active' : '' ?>" data-basemap="aerial"><?= htmlspecialchars($config['aerial']['label']) ?></button>
+        </div>
     <?php endif; ?>
     <?php if ($layers === [] && $config['tile_layers'] === [] && $config['image_layers'] === []): ?>
         <p class="empty">

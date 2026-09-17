@@ -10,25 +10,14 @@ return [
     'map' => [
         'center' => [51.5336, 9.9352],
         'zoom' => 13,
-        // Vector basemaps: OpenFreeMap (OpenStreetMap, no API key) + VersaTiles.
-        // `default_style` is used when no ?style= is given.
+        // Vector basemap: OpenFreeMap Liberty (OpenStreetMap, no API key).
         'default_style' => 'liberty',
         'style_url' => 'https://tiles.openfreemap.org/styles/liberty',
         'style_options' => [
-            'positron' => 'https://tiles.openfreemap.org/styles/positron',
             'liberty' => 'https://tiles.openfreemap.org/styles/liberty',
-            'bright' => 'https://tiles.openfreemap.org/styles/bright',
-            'dark' => 'https://tiles.openfreemap.org/styles/dark',
-            'fiord' => 'https://tiles.openfreemap.org/styles/fiord',
-            'colorful' => 'https://tiles.versatiles.org/assets/styles/colorful/style.json',
         ],
         'style_labels' => [
-            'positron' => 'Positron (light)',
-            'liberty' => 'Liberty (colourful)',
-            'bright' => 'Bright',
-            'dark' => 'Dark',
-            'fiord' => 'Fiord',
-            'colorful' => 'Colorful (VersaTiles)',
+            'liberty' => 'Liberty',
         ],
         // Raster fallback if no vector style is configured.
         'basemap' => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',

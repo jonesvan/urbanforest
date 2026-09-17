@@ -597,11 +597,18 @@
             });
     }
 
+    function setActiveBasemap(name) {
+        document.querySelectorAll('.basemap-option').forEach(function (button) {
+            button.classList.toggle('is-active', button.getAttribute('data-basemap') === name);
+        });
+    }
+
     function applyBasemap(name) {
         if (!name || name === currentBasemap) {
             return;
         }
         currentBasemap = name;
+        setActiveBasemap(name);
         map.setStyle(basemapStyle(name), { diff: false });
         map.once('style.load', function () {
             setupDataLayers();
@@ -618,14 +625,16 @@
         window.history.replaceState(null, '', url);
     }
 
-    function bindBasemapSelect() {
-        var select = document.getElementById('basemap-select');
-        if (!select) {
+    function bindBasemapSwitch() {
+        var buttons = document.querySelectorAll('.basemap-option');
+        if (!buttons.length) {
             return;
         }
-        select.value = currentBasemap;
-        select.addEventListener('change', function () {
-            applyBasemap(select.value);
+        setActiveBasemap(currentBasemap);
+        buttons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                applyBasemap(button.getAttribute('data-basemap'));
+            });
         });
     }
 
@@ -694,7 +703,7 @@
     }
 
     map.on('load', function () {
-        bindBasemapSelect();
+        bindBasemapSwitch();
         bindLayerControls();
         setupDataLayers();
         setupSheetDrag();

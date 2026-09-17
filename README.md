@@ -4,7 +4,7 @@ A web app that visualizes street trees in urban areas, combining [ESA Copernicus
 
 ## What it does
 
-`urbanforest` renders street and urban trees as an interactive MapLibre GL JS (WebGL) map over an [OpenFreeMap](https://openfreemap.org/) vector basemap (OpenStreetMap data). A **Base map** picker in the Layers sheet switches between several vector styles (Positron, Liberty, Bright, Dark, Fiord, and VersaTiles' *Colorful*) and the official **LGLN DOP20 airborne orthophoto** (Lower Saxony, 20 cm, open data; proxied to Web-Mercator by `public/tiles/dop20.php`). It combines three layers:
+`urbanforest` renders street and urban trees as an interactive MapLibre GL JS (WebGL) map over an [OpenFreeMap](https://openfreemap.org/) **Liberty** vector basemap (OpenStreetMap data). A **Map / Aerial** switch in the Layers sheet swaps it for the official **LGLN DOP20 airborne orthophoto** (Lower Saxony, 20 cm, open data; proxied to Web-Mercator by `public/tiles/dop20.php`). It combines three layers:
 
 - **Tree patches** from the **Urban Atlas Street Tree Layer (STL)** — a Copernicus Land Monitoring Service product derived from high-resolution satellite imagery, mapping contiguous rows and patches of trees in European Functional Urban Areas ("Erfasst sogar Einzel- und Straßenbäume in städtischen Gebieten").
 - **Individual trees** from **OpenStreetMap** (`natural=tree` nodes) — one point per mapped tree.
@@ -131,8 +131,7 @@ city boundary, as vector tiles) — so the map shows data without rerunning the 
 The same crowns back the public API as gzipped per-tile GeoJSON in `public/data/trees/`.
 
 The map view and basemap can be set via URL, e.g.
-`?lat=51.5336&lng=9.9352&zoom=16&style=liberty` or `?basemap=aerial`.
-`style` accepts any key from `map.style_options` (positron, liberty, bright, dark, fiord, colorful).
+`?lat=51.5336&lng=9.9352&zoom=16` (plus optional `?style=liberty` or `?basemap=aerial`).
 
 ## Public API
 
