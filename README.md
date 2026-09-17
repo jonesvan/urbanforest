@@ -94,6 +94,22 @@ npm run tiles -- --input=data-src/gottingen-crowns-full.geojson --out-dir=public
 npm run tiles:trees -- --input=data-src/gottingen-crowns-full.geojson --out-dir=public/data/trees
 ```
 
+Fetch the Copernicus climate fields (CO₂ + 2 m temperature, both **off** by default):
+
+```bash
+uv pip install --python .venv cdsapi xarray netcdf4
+export CDSAPI_KEY=<token>   # https://cds.climate.copernicus.eu  (ERA5, free account)
+export ADSAPI_KEY=<token>   # https://ads.atmosphere.copernicus.eu  (CAMS, free account)
+npm run fetch:climate -- --bbox=9.83,51.47,10.05,51.60 --date=2025-07-01 --time=12:00
+# or inspect the API requests first without downloading:
+#   .venv/bin/python scripts/fetch-climate.py --bbox=... --dry-run
+```
+
+This writes `public/data/gottingen-temperature.geojson` (ERA5, Copernicus C3S) and
+`public/data/gottingen-co2.geojson` (CAMS) — one point per model grid cell. Both are
+coarse regional fields (~25 km for ERA5, ~11 km for CAMS), not urban measurements, and
+appear in the Layers sheet switched off.
+
 Serve:
 
 ```bash
@@ -168,6 +184,7 @@ scripts/
   fetch-osm-trees.mjs    Download individual OSM trees as GeoJSON points
   fetch-osm-buildings.mjs Download OSM building footprints (used as a mask)
   fetch-dop20.mjs        Download DOP10/DOP20 orthophoto tiles via the LGLN STAC
+  fetch-climate.py       Fetch ERA5 temperature + CAMS CO2 (CDS/ADS) as GeoJSON
   build-chm.py           Build a canopy height model (DOM1 - DGM1) from STAC COGs
   detect-crowns.py       Detect individual tree crowns from a CHM (watershed)
   build-crown-tiles.mjs  Tile a crown GeoJSON into MVT vector tiles

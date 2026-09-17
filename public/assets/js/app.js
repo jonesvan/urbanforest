@@ -73,7 +73,11 @@
         species: 'Species',
         genus: 'Genus',
         leaf_type: 'Leaf type',
-        name: 'Name'
+        name: 'Name',
+        value: 'Value',
+        unit: 'Unit',
+        time: 'Time',
+        variable: 'Variable'
     };
 
     function escapeHtml(value) {
@@ -104,12 +108,15 @@
         if (key === 'circumference') {
             return value + ' m';
         }
+        if (key === 'value' && typeof value === 'number') {
+            return String(Math.round(value * 100) / 100);
+        }
         return String(value);
     }
 
     function titleFor(properties) {
         properties = properties || {};
-        return properties.name || properties.species || properties.genus || 'Tree';
+        return properties.variable || properties.name || properties.species || properties.genus || 'Tree';
     }
 
     function popupHtml(properties) {
@@ -429,7 +436,24 @@
         bindPopup(ids);
     }
 
+    // Build a MapLibre color ramp from a layer style (linear across domain).
+    function rampColorExpression(style) {
+        if (!style || !style.property || !Array.isArray(style.ramp) || !Array.isArray(style.domain)) {
+            return null;
+        }
+        var domain = style.domain;
+        var ramp = style.ramp;
+        var stops = ['interpolate', ['linear'], ['to-number', ['get', style.property]]];
+        ramp.forEach(function (color, index) {
+            var t = ramp.length === 1 ? 0 : index / (ramp.length - 1);
+            stops.push(domain[0] + (domain[1] - domain[0]) * t);
+            stops.push(color);
+        });
+        return stops;
+    }
+
     function addGeoJsonLayer(layer) {
+        var style = layer.style || null;
         return fetch(layer.url)
             .then(function (response) {
                 if (!response.ok) {
@@ -448,33 +472,38 @@
 
                 if (geometryType === 'Point' || geometryType === 'MultiPoint') {
                     var circleId = layer.name + '-circle';
+                    var circleColor = rampColorExpression(style) || '#065f46';
+                    var circleRadius = (style && style.radius) || (style
+                        ? ['interpolate', ['linear'], ['zoom'], 6, 6, 11, 12, 15, 18]
+                        : ['interpolate', ['linear'], ['zoom'], 13, 2, 18, 5]);
                     map.addLayer({
                         id: circleId,
                         type: 'circle',
                         source: layer.name,
                         paint: {
-                            'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 1.5, 18, 4],
-                            'circle-color': '#2ecc71',
-                            'circle-stroke-color': '#0f5132',
-                            'circle-stroke-width': 0.5,
-                            'circle-opacity': 0.9
+                            'circle-radius': circleRadius,
+                            'circle-color': circleColor,
+                            'circle-stroke-color': (style && style.stroke) || '#ecfdf5',
+                            'circle-stroke-width': 1,
+                            'circle-opacity': style ? 0.8 : 0.95
                         }
                     });
                     ids.push(circleId);
                 } else {
                     var fillId = layer.name + '-fill';
                     var lineId = layer.name + '-line';
+                    var fillColor = rampColorExpression(style) || '#2dd4bf';
                     map.addLayer({
                         id: fillId,
                         type: 'fill',
                         source: layer.name,
-                        paint: { 'fill-color': '#3fae6a', 'fill-opacity': 0.5 }
+                        paint: { 'fill-color': fillColor, 'fill-opacity': style ? 0.65 : 0.42 }
                     });
                     map.addLayer({
                         id: lineId,
                         type: 'line',
                         source: layer.name,
-                        paint: { 'line-color': '#1b7f4d', 'line-width': 1 }
+                        paint: { 'line-color': '#0f766e', 'line-width': 1 }
                     });
                     ids.push(fillId, lineId);
                 }

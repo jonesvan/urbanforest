@@ -15,6 +15,7 @@ if (is_dir($dataDir)) {
             'label' => ucwords(str_replace(['-', '_'], ' ', $name)),
             'url' => 'data/' . basename($file),
             'meta' => $config['layer_meta'][$name] ?? $config['default_layer_meta'],
+            'style' => $config['layer_styles'][$name] ?? null,
             'default' => $config['layer_defaults'][$name] ?? true,
         ];
     }

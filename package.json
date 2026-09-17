@@ -8,6 +8,7 @@
     "fetch": "node scripts/fetch-stl.mjs",
     "fetch:trees": "node scripts/fetch-osm-trees.mjs",
     "fetch:ortho": "node scripts/fetch-dop20.mjs",
+    "fetch:climate": ".venv/bin/python scripts/fetch-climate.py",
     "convert": "node scripts/convert-stl.mjs",
     "serve": "php -S localhost:8000 -t public",
     "tiles": "node scripts/build-crown-tiles.mjs",

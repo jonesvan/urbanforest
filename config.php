@@ -71,6 +71,47 @@ return [
             'Licence' => 'ODbL',
             'API' => 'https://overpass-api.de/api/interpreter',
         ],
+        'gottingen-temperature' => [
+            'Source' => 'Copernicus Climate Change Service (C3S) — ERA5 reanalysis',
+            'Provider' => 'ECMWF on behalf of the European Union',
+            'Variable' => '2 m air temperature',
+            'Data' => 'Hourly reanalysis, regridded to the native ERA5 grid (~0.25°)',
+            'Model' => 'None — reanalysis product. Retrieved with the CDS API (scripts/fetch-climate.py)',
+            'Known limits' => '~25 km grid cell — a coarse regional value, not an urban heat-island measurement',
+            'Licence' => 'Copernicus open data (CC-BY-4.0)',
+            'Docs' => 'https://cds.climate.copernicus.eu',
+        ],
+        'gottingen-co2' => [
+            'Source' => 'Copernicus Atmosphere Monitoring Service (CAMS) — global greenhouse gas forecasts',
+            'Provider' => 'ECMWF on behalf of the European Union',
+            'Variable' => 'Surface carbon dioxide (CO₂)',
+            'Data' => 'Global forecast fields (surface), ~0.1°',
+            'Model' => 'None — atmospheric model product. Retrieved with the ADS API (scripts/fetch-climate.py)',
+            'Known limits' => 'Well-mixed background CO₂ — not a local emission inventory',
+            'Licence' => 'Copernicus open data (CC-BY-4.0)',
+            'Docs' => 'https://ads.atmosphere.copernicus.eu',
+        ],
+    ],
+
+    // Optional per-layer rendering hints for GeoJSON layers.
+    // ramp: color scale mapped linearly across domain (min, max) on `property`.
+    'layer_styles' => [
+        'gottingen-temperature' => [
+            'type' => 'circle',
+            'property' => 'value',
+            'unit' => '°C',
+            'domain' => [-10, 35],
+            'ramp' => ['#1d4ed8', '#22d3ee', '#facc15', '#f97316', '#dc2626'],
+            'stroke' => 'rgba(255, 255, 255, 0.85)',
+        ],
+        'gottingen-co2' => [
+            'type' => 'circle',
+            'property' => 'value',
+            'unit' => 'ppm',
+            'domain' => [395, 440],
+            'ramp' => ['#a7f3d0', '#fde68a', '#fb923c', '#ef4444', '#7f1d1d'],
+            'stroke' => 'rgba(255, 255, 255, 0.85)',
+        ],
     ],
 
     'default_layer_meta' => [
@@ -81,6 +122,8 @@ return [
     'layer_defaults' => [
         'gottingen-street-trees' => false,
         'gottingen-trees' => false,
+        'gottingen-temperature' => false,
+        'gottingen-co2' => false,
     ],
 
     'copernicus' => [
