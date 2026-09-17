@@ -129,7 +129,7 @@ curl "https://urbanforest.fly.dev/api/trees/?bbox=9.93,51.53,9.94,51.54&limit=3"
 ```
 
 It is backed by gzipped per-tile GeoJSON under `public/data/trees/`, built with
-`npm run tiles:trees`.
+`npm run tiles:trees`. Full reference: [`docs/api.md`](docs/api.md).
 
 ## Deploy
 
@@ -172,6 +172,7 @@ scripts/
   build-tree-tiles.mjs   Tile crowns into gzipped per-tile GeoJSON for the API
   detect-trees.py        DeepForest RGB detection (experimental, failed on leaf-off)
 docs/
+  api.md              Public trees API reference
   data-access.md      How to obtain the STL data
   tree-detection.md   Scope + results for detecting every individual tree
   future-tasks.md     Performance, data-source and model decisions ahead
