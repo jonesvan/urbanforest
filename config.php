@@ -21,6 +21,7 @@ return [
             'url' => 'tiles/crowns/{z}/{x}/{y}.pbf',
             'min_zoom' => 13,
             'max_zoom' => 17,
+            'default' => true,
             'fill_color' => '#e67e22',
             'meta' => [
                 'Source' => 'LGLN OpenGeoData — DOM1 (surface) + DGM1 (terrain), airborne LiDAR',
@@ -61,6 +62,12 @@ return [
 
     'default_layer_meta' => [
         'Source' => 'unknown',
+    ],
+
+    // Which GeoJSON layers are switched on when the page loads (unlisted => on).
+    'layer_defaults' => [
+        'gottingen-street-trees' => false,
+        'gottingen-trees' => false,
     ],
 
     'copernicus' => [

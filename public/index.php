@@ -71,9 +71,10 @@ $appSettings = [
     <?php else: ?>
         <ul id="layer-list">
             <?php foreach ($layers as $layer): ?>
+                <?php $active = $config['layer_defaults'][$layer['name']] ?? true; ?>
                 <li>
                     <label>
-                        <input type="checkbox" data-layer-url="<?= htmlspecialchars($layer['url']) ?>" checked>
+                        <input type="checkbox" data-layer-url="<?= htmlspecialchars($layer['url']) ?>"<?= $active ? ' checked' : '' ?>>
                         <?= htmlspecialchars($layer['label']) ?>
                     </label>
                     <details class="layer-info">
@@ -83,9 +84,10 @@ $appSettings = [
                 </li>
             <?php endforeach; ?>
             <?php foreach ($config['tile_layers'] as $layer): ?>
+                <?php $active = $layer['default'] ?? true; ?>
                 <li>
                     <label>
-                        <input type="checkbox" data-tile-layer="<?= htmlspecialchars($layer['name']) ?>" checked>
+                        <input type="checkbox" data-tile-layer="<?= htmlspecialchars($layer['name']) ?>"<?= $active ? ' checked' : '' ?>>
                         <?= htmlspecialchars($layer['label']) ?>
                     </label>
                     <details class="layer-info">
