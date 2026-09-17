@@ -83,7 +83,7 @@ $appSettings = [
     <?php if ($config['satellite']): ?>
         <div class="basemap-switch" role="group" aria-label="Base map">
             <button type="button" class="basemap-option is-active" data-basemap="standard">Map</button>
-            <button type="button" class="basemap-option" data-basemap="satellite">Satellite</button>
+            <button type="button" class="basemap-option" data-basemap="satellite"><?= htmlspecialchars($config['satellite']['label']) ?></button>
         </div>
     <?php endif; ?>
     <?php if ($layers === [] && $config['tile_layers'] === [] && $config['image_layers'] === []): ?>

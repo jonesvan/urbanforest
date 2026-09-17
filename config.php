@@ -23,14 +23,16 @@ return [
         'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     ],
 
-    // Optional satellite base map (Copernicus Sentinel-2, key-free via EOX).
+    // Optional airborne base map: LGLN DOP20 orthophoto (Lower Saxony, 20 cm,
+    // open data), served through the tiles/dop20.php Web-Mercator proxy.
     // Set to null to hide the base-map switcher.
     'satellite' => [
-        'label' => 'Satellite',
-        'tiles' => 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg',
+        'label' => 'Aerial',
+        'tiles' => 'tiles/dop20.php?z={z}&x={x}&y={y}',
         'tile_size' => 256,
         'max_zoom' => 18,
-        'attribution' => 'Sentinel-2 cloudless 2024 by <a href="https://s2maps.eu">EOX</a> (contains modified Copernicus Sentinel data)',
+        'bounds' => [6.5, 51.1, 11.76, 54.15],
+        'attribution' => 'Aerial orthophoto © LGLN Niedersachsen (DOP20, open data)',
     ],
 
     'tile_layers' => [

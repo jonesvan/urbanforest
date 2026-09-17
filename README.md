@@ -4,7 +4,7 @@ A web app that visualizes street trees in urban areas, combining [ESA Copernicus
 
 ## What it does
 
-`urbanforest` renders street and urban trees as an interactive MapLibre GL JS (WebGL) map over an [OpenFreeMap](https://openfreemap.org/) vector basemap (OpenStreetMap data). The base map can be switched in the Layers sheet between the vector styles and a Copernicus **Sentinel-2 cloudless** satellite view (key-free, via [EOX](https://s2maps.eu/)). It combines three layers:
+`urbanforest` renders street and urban trees as an interactive MapLibre GL JS (WebGL) map over an [OpenFreeMap](https://openfreemap.org/) vector basemap (OpenStreetMap data). The base map can be switched in the Layers sheet to the official **LGLN DOP20 airborne orthophoto** (Lower Saxony, 20 cm, open data), proxied to Web-Mercator by `public/tiles/dop20.php`. It combines three layers:
 
 - **Tree patches** from the **Urban Atlas Street Tree Layer (STL)** — a Copernicus Land Monitoring Service product derived from high-resolution satellite imagery, mapping contiguous rows and patches of trees in European Functional Urban Areas ("Erfasst sogar Einzel- und Straßenbäume in städtischen Gebieten").
 - **Individual trees** from **OpenStreetMap** (`natural=tree` nodes) — one point per mapped tree.
@@ -184,6 +184,7 @@ public/            Web root
 public/tiles/
   crowns/          Vector tiles (MVT) for the detected tree crowns (z13–z17, polygons)
   crown-points/    Low-zoom crown centroids (z6–z12), drawn as dots
+  dop20.php        Web-Mercator tile proxy for the LGLN DOP20 aerial basemap
 scripts/
   fetch-stl.mjs          Download STL tree patches from Copernicus for an FUA
   convert-stl.mjs        Convert .fgb -> .geojson (EPSG:3035 -> 4326)

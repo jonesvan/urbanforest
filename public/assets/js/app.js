@@ -565,13 +565,17 @@
 
         var sourceId = 'satellite-basemap';
         if (!map.getSource(sourceId)) {
-            map.addSource(sourceId, {
+            var satelliteSource = {
                 type: 'raster',
-                tiles: [config.tiles],
+                tiles: [absoluteUrl(config.tiles)],
                 tileSize: config.tile_size || 256,
                 maxzoom: config.max_zoom || 18,
                 attribution: config.attribution || ''
-            });
+            };
+            if (config.bounds) {
+                satelliteSource.bounds = config.bounds;
+            }
+            map.addSource(sourceId, satelliteSource);
         }
         if (!map.getLayer(sourceId)) {
             map.addLayer({
