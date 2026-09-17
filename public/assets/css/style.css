@@ -1,7 +1,7 @@
 :root {
-    --green: #059669;
-    --green-dark: #064e3b;
-    --green-bright: #10b981;
+    --green: #2e7d32;
+    --green-dark: #1b5e20;
+    --green-bright: #4caf50;
     --ink: #101512;
     --muted: #5a6b5f;
     --panel-bg: rgba(255, 255, 255, 0.94);
@@ -183,6 +183,33 @@ button {
 }
 
 /* ---- Layer list + switches -------------------------------------------- */
+
+.basemap-switch {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    margin-bottom: 0.85rem;
+    background: #eef2ef;
+    border-radius: 999px;
+}
+
+.basemap-option {
+    flex: 1;
+    min-height: 2.2rem;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--green-dark);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+
+.basemap-option.is-active {
+    background: var(--green);
+    color: #fff;
+}
 
 .layer-list {
     margin: 0;
@@ -639,7 +666,7 @@ button {
         z-index: 1000;
         min-height: 3.25rem;
         padding: calc(0.5rem + var(--safe-top)) 1rem 0.5rem;
-        background: rgba(6, 78, 59, 0.82);
+        background: rgba(27, 94, 32, 0.82);
         backdrop-filter: blur(16px) saturate(150%);
         -webkit-backdrop-filter: blur(16px) saturate(150%);
         border-bottom: 1px solid rgba(255, 255, 255, 0.12);
@@ -764,6 +791,11 @@ button {
 
     .layer-toggle {
         min-height: 3.1rem;
+    }
+
+    .basemap-option {
+        min-height: 2.8rem;
+        font-size: 0.88rem;
     }
 
     .layer-name {

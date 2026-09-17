@@ -50,7 +50,7 @@ CO2_STEP = 0.10    # CAMS greenhouse gases (~11 km)
 
 RAMPS = {
     "temperature": ["#1d4ed8", "#22d3ee", "#facc15", "#f97316", "#dc2626"],
-    "co2": ["#a7f3d0", "#fde68a", "#fb923c", "#ef4444", "#7f1d1d"],
+    "co2": ["#d9f99d", "#fde047", "#fb923c", "#ef4444", "#7f1d1d"],
 }
 
 

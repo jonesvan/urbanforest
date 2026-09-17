@@ -45,6 +45,7 @@ $appSettings = [
     'layers' => $layers,
     'tileLayers' => $config['tile_layers'],
     'imageLayers' => $config['image_layers'],
+    'satellite' => $config['satellite'],
 ];
 ?>
 <!DOCTYPE html>
@@ -52,7 +53,7 @@ $appSettings = [
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#064e3b">
+<meta name="theme-color" content="#1b5e20">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -79,6 +80,12 @@ $appSettings = [
         <span class="panel-chevron" aria-hidden="true"></span>
     </div>
     <div class="panel-body" id="panel-body">
+    <?php if ($config['satellite']): ?>
+        <div class="basemap-switch" role="group" aria-label="Base map">
+            <button type="button" class="basemap-option is-active" data-basemap="standard">Map</button>
+            <button type="button" class="basemap-option" data-basemap="satellite">Satellite</button>
+        </div>
+    <?php endif; ?>
     <?php if ($layers === [] && $config['tile_layers'] === [] && $config['image_layers'] === []): ?>
         <p class="empty">
             No data yet. Run the pipeline in <code>scripts/</code> to populate

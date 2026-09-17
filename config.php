@@ -23,6 +23,16 @@ return [
         'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     ],
 
+    // Optional satellite base map (Copernicus Sentinel-2, key-free via EOX).
+    // Set to null to hide the base-map switcher.
+    'satellite' => [
+        'label' => 'Satellite',
+        'tiles' => 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg',
+        'tile_size' => 256,
+        'max_zoom' => 18,
+        'attribution' => 'Sentinel-2 cloudless 2024 by <a href="https://s2maps.eu">EOX</a> (contains modified Copernicus Sentinel data)',
+    ],
+
     'tile_layers' => [
         [
             'name' => 'crowns',
@@ -34,8 +44,8 @@ return [
             'point_min_zoom' => 6,
             'point_max_zoom' => 12,
             'default' => true,
-            'fill_color' => '#10b981',
-            'line_color' => '#047857',
+            'fill_color' => '#4caf50',
+            'line_color' => '#1b5e20',
             'meta' => [
                 'Source' => 'LGLN OpenGeoData — DOM1 (surface) + DGM1 (terrain), airborne LiDAR',
                 'Provider' => 'LGLN Niedersachsen',

@@ -506,7 +506,7 @@
 
                 if (geometryType === 'Point' || geometryType === 'MultiPoint') {
                     var circleId = layer.name + '-circle';
-                    var circleColor = rampColorExpression(style) || '#065f46';
+                    var circleColor = rampColorExpression(style) || '#1b5e20';
                     var circleRadius = (style && style.radius) || (style
                         ? ['interpolate', ['linear'], ['zoom'], 6, 6, 11, 12, 15, 18]
                         : ['interpolate', ['linear'], ['zoom'], 13, 2, 18, 5]);
@@ -517,7 +517,7 @@
                         paint: {
                             'circle-radius': circleRadius,
                             'circle-color': circleColor,
-                            'circle-stroke-color': (style && style.stroke) || '#ecfdf5',
+                            'circle-stroke-color': (style && style.stroke) || '#f1f8e9',
                             'circle-stroke-width': 1,
                             'circle-opacity': style ? 0.8 : 0.95
                         }
@@ -526,7 +526,7 @@
                 } else {
                     var fillId = layer.name + '-fill';
                     var lineId = layer.name + '-line';
-                    var fillColor = rampColorExpression(style) || '#2dd4bf';
+                    var fillColor = rampColorExpression(style) || '#81c784';
                     map.addLayer({
                         id: fillId,
                         type: 'fill',
@@ -537,7 +537,7 @@
                         id: lineId,
                         type: 'line',
                         source: layer.name,
-                        paint: { 'line-color': '#0f766e', 'line-width': 1 }
+                        paint: { 'line-color': '#2e7d32', 'line-width': 1 }
                     });
                     ids.push(fillId, lineId);
                 }
@@ -552,7 +552,62 @@
             });
     }
 
+    function setupBasemapSwitch() {
+        var config = settings.satellite;
+        if (!config) {
+            return;
+        }
+
+        // Capture the vector basemap layers so they can be swapped out.
+        var basemapLayers = (map.getStyle().layers || []).map(function (layer) {
+            return { id: layer.id, visibility: (layer.layout && layer.layout.visibility) || 'visible' };
+        });
+
+        var sourceId = 'satellite-basemap';
+        if (!map.getSource(sourceId)) {
+            map.addSource(sourceId, {
+                type: 'raster',
+                tiles: [config.tiles],
+                tileSize: config.tile_size || 256,
+                maxzoom: config.max_zoom || 18,
+                attribution: config.attribution || ''
+            });
+        }
+        if (!map.getLayer(sourceId)) {
+            map.addLayer({
+                id: sourceId,
+                type: 'raster',
+                source: sourceId,
+                layout: { visibility: 'none' },
+                paint: { 'raster-opacity': 1, 'raster-fade-duration': 0 }
+            });
+        }
+
+        function setBasemap(mode) {
+            var satelliteOn = mode === 'satellite';
+            basemapLayers.forEach(function (layer) {
+                if (map.getLayer(layer.id)) {
+                    map.setLayoutProperty(layer.id, 'visibility', satelliteOn ? 'none' : layer.visibility);
+                }
+            });
+            setVisibility([sourceId], satelliteOn);
+            document.querySelectorAll('.basemap-option').forEach(function (button) {
+                button.classList.toggle('is-active', button.getAttribute('data-basemap') === (satelliteOn ? 'satellite' : 'standard'));
+            });
+        }
+
+        document.querySelectorAll('.basemap-option').forEach(function (button) {
+            button.addEventListener('click', function () {
+                setBasemap(button.getAttribute('data-basemap'));
+            });
+        });
+
+        setBasemap((params.get('basemap') || '').toLowerCase() === 'satellite' ? 'satellite' : 'standard');
+    }
+
     map.on('load', function () {
+        setupBasemapSwitch();
+
         var tileNames = {};
         (settings.tileLayers || []).forEach(function (config) {
             tileNames[config.name] = config;
