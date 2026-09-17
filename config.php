@@ -10,23 +10,35 @@ return [
     'map' => [
         'center' => [51.5336, 9.9352],
         'zoom' => 13,
-        // OpenFreeMap vector basemap (OpenStreetMap data, no API key). Set to ''
-        // to fall back to the raster sources below.
-        'style_url' => 'https://tiles.openfreemap.org/styles/positron',
+        // Vector basemaps: OpenFreeMap (OpenStreetMap, no API key) + VersaTiles.
+        // `default_style` is used when no ?style= is given.
+        'default_style' => 'liberty',
+        'style_url' => 'https://tiles.openfreemap.org/styles/liberty',
         'style_options' => [
             'positron' => 'https://tiles.openfreemap.org/styles/positron',
             'liberty' => 'https://tiles.openfreemap.org/styles/liberty',
             'bright' => 'https://tiles.openfreemap.org/styles/bright',
             'dark' => 'https://tiles.openfreemap.org/styles/dark',
+            'fiord' => 'https://tiles.openfreemap.org/styles/fiord',
+            'colorful' => 'https://tiles.versatiles.org/assets/styles/colorful/style.json',
         ],
+        'style_labels' => [
+            'positron' => 'Positron (light)',
+            'liberty' => 'Liberty (colourful)',
+            'bright' => 'Bright',
+            'dark' => 'Dark',
+            'fiord' => 'Fiord',
+            'colorful' => 'Colorful (VersaTiles)',
+        ],
+        // Raster fallback if no vector style is configured.
         'basemap' => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     ],
 
     // Optional airborne base map: LGLN DOP20 orthophoto (Lower Saxony, 20 cm,
     // open data), served through the tiles/dop20.php Web-Mercator proxy.
-    // Set to null to hide the base-map switcher.
-    'satellite' => [
+    // Set to null to hide the aerial option.
+    'aerial' => [
         'label' => 'Aerial',
         'tiles' => 'tiles/dop20.php?z={z}&x={x}&y={y}',
         'tile_size' => 256,

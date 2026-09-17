@@ -184,31 +184,43 @@ button {
 
 /* ---- Layer list + switches -------------------------------------------- */
 
-.basemap-switch {
+.basemap-select {
     display: flex;
-    gap: 0.25rem;
-    padding: 0.25rem;
-    margin-bottom: 0.85rem;
-    background: #eef2ef;
-    border-radius: 999px;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.9rem;
 }
 
-.basemap-option {
-    flex: 1;
-    min-height: 2.2rem;
-    border: none;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--green-dark);
-    font-size: 0.82rem;
+.basemap-select > span {
+    font-size: 0.7rem;
     font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s var(--ease), color 0.2s var(--ease);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--green-dark);
 }
 
-.basemap-option.is-active {
-    background: var(--green);
-    color: #fff;
+.basemap-select select {
+    width: 100%;
+    min-height: 2.5rem;
+    padding: 0.45rem 2rem 0.45rem 0.7rem;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
+    background-color: #eef2ef;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%231b5e20' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    border: 1px solid #d7e0d8;
+    border-radius: 10px;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.basemap-select select:focus-visible {
+    outline: 2px solid var(--green-dark);
+    outline-offset: 1px;
 }
 
 .layer-list {
@@ -793,9 +805,9 @@ button {
         min-height: 3.1rem;
     }
 
-    .basemap-option {
-        min-height: 2.8rem;
-        font-size: 0.88rem;
+    .basemap-select select {
+        min-height: 2.9rem;
+        font-size: 0.95rem;
     }
 
     .layer-name {

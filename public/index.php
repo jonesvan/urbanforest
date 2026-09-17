@@ -40,12 +40,18 @@ function render_layer_meta(array $meta): string
     return $html . '</dl>';
 }
 
+$styleOptions = $config['map']['style_options'] ?? [];
+$requestedStyle = is_string($_GET['style'] ?? null) ? strtolower($_GET['style']) : '';
+$currentBasemap = (($_GET['basemap'] ?? '') === 'aerial' && $config['aerial'])
+    ? 'aerial'
+    : (isset($styleOptions[$requestedStyle]) ? $requestedStyle : ($config['map']['default_style'] ?? ''));
+
 $appSettings = [
     'map' => $config['map'],
     'layers' => $layers,
     'tileLayers' => $config['tile_layers'],
     'imageLayers' => $config['image_layers'],
-    'satellite' => $config['satellite'],
+    'aerial' => $config['aerial'],
 ];
 ?>
 <!DOCTYPE html>
@@ -80,11 +86,18 @@ $appSettings = [
         <span class="panel-chevron" aria-hidden="true"></span>
     </div>
     <div class="panel-body" id="panel-body">
-    <?php if ($config['satellite']): ?>
-        <div class="basemap-switch" role="group" aria-label="Base map">
-            <button type="button" class="basemap-option is-active" data-basemap="standard">Map</button>
-            <button type="button" class="basemap-option" data-basemap="satellite"><?= htmlspecialchars($config['satellite']['label']) ?></button>
-        </div>
+    <?php if ($styleOptions || $config['aerial']): ?>
+        <label class="basemap-select">
+            <span>Base map</span>
+            <select id="basemap-select">
+                <?php foreach ($styleOptions as $name => $url): ?>
+                    <option value="<?= htmlspecialchars($name) ?>"<?= $name === $currentBasemap ? ' selected' : '' ?>><?= htmlspecialchars($config['map']['style_labels'][$name] ?? ucfirst($name)) ?></option>
+                <?php endforeach; ?>
+                <?php if ($config['aerial']): ?>
+                    <option value="aerial"<?= $currentBasemap === 'aerial' ? ' selected' : '' ?>><?= htmlspecialchars($config['aerial']['label']) ?></option>
+                <?php endif; ?>
+            </select>
+        </label>
     <?php endif; ?>
     <?php if ($layers === [] && $config['tile_layers'] === [] && $config['image_layers'] === []): ?>
         <p class="empty">

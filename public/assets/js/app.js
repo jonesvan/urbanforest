@@ -13,14 +13,13 @@
     ];
     var zoom = params.get('zoom') ? parseFloat(params.get('zoom')) : mapConfig.zoom;
 
-    // Vector basemap (OpenFreeMap, no API key). ?style=positron|liberty|bright|dark
-    // overrides the configured default; empty style_url falls back to raster.
+    // Basemaps: OpenFreeMap vector styles + an optional aerial raster (LGLN DOP20).
+    // ?style=<name> or ?basemap=aerial selects one; otherwise the configured default.
+    var aerial = settings.aerial || null;
     var styleOptions = mapConfig.style_options || {};
-    var requestedStyle = (params.get('style') || '').toLowerCase();
-    var mapStyle = styleOptions[requestedStyle] || mapConfig.style_url || null;
 
-    if (!mapStyle) {
-        mapStyle = {
+    function rasterFallbackStyle() {
+        return {
             version: 8,
             sources: {
                 basemap: {
@@ -34,9 +33,49 @@
         };
     }
 
+    function aerialStyle() {
+        var source = {
+            type: 'raster',
+            tiles: [absoluteUrl(aerial.tiles)],
+            tileSize: aerial.tile_size || 256,
+            maxzoom: aerial.max_zoom || 18,
+            attribution: aerial.attribution || ''
+        };
+        if (aerial.bounds) {
+            source.bounds = aerial.bounds;
+        }
+        return {
+            version: 8,
+            sources: { aerial: source },
+            layers: [{ id: 'aerial', type: 'raster', source: 'aerial', paint: { 'raster-fade-duration': 0 } }]
+        };
+    }
+
+    function basemapStyle(name) {
+        if (name === 'aerial' && aerial) {
+            return aerialStyle();
+        }
+        return styleOptions[name] || mapConfig.style_url || rasterFallbackStyle();
+    }
+
+    var requestedStyle = (params.get('style') || '').toLowerCase();
+    var requestedBasemap = (params.get('basemap') || '').toLowerCase();
+    var currentBasemap;
+    if (requestedBasemap === 'aerial' && aerial) {
+        currentBasemap = 'aerial';
+    } else if (styleOptions[requestedStyle]) {
+        currentBasemap = requestedStyle;
+    } else if (styleOptions[mapConfig.default_style]) {
+        currentBasemap = mapConfig.default_style;
+    } else if (aerial) {
+        currentBasemap = 'aerial';
+    } else {
+        currentBasemap = Object.keys(styleOptions)[0] || '';
+    }
+
     var map = new maplibregl.Map({
         container: 'map',
-        style: mapStyle,
+        style: basemapStyle(currentBasemap),
         center: center,
         zoom: zoom,
         hash: false
@@ -165,8 +204,14 @@
         featureClose.addEventListener('click', hideFeature);
     }
 
+    var boundLayers = {};
+
     function bindPopup(layerIds) {
         layerIds.forEach(function (id) {
+            if (boundLayers[id]) {
+                return;
+            }
+            boundLayers[id] = true;
             map.on('click', id, function (event) {
                 showFeature(event.features[0].properties, event.lngLat);
             });
@@ -552,74 +597,51 @@
             });
     }
 
-    function setupBasemapSwitch() {
-        var config = settings.satellite;
-        if (!config) {
+    function applyBasemap(name) {
+        if (!name || name === currentBasemap) {
             return;
         }
-
-        // Capture the vector basemap layers so they can be swapped out.
-        var basemapLayers = (map.getStyle().layers || []).map(function (layer) {
-            return { id: layer.id, visibility: (layer.layout && layer.layout.visibility) || 'visible' };
+        currentBasemap = name;
+        map.setStyle(basemapStyle(name), { diff: false });
+        map.once('style.load', function () {
+            setupDataLayers();
         });
 
-        var sourceId = 'satellite-basemap';
-        if (!map.getSource(sourceId)) {
-            var satelliteSource = {
-                type: 'raster',
-                tiles: [absoluteUrl(config.tiles)],
-                tileSize: config.tile_size || 256,
-                maxzoom: config.max_zoom || 18,
-                attribution: config.attribution || ''
-            };
-            if (config.bounds) {
-                satelliteSource.bounds = config.bounds;
-            }
-            map.addSource(sourceId, satelliteSource);
+        var url = new URL(window.location.href);
+        if (name === 'aerial') {
+            url.searchParams.delete('style');
+            url.searchParams.set('basemap', 'aerial');
+        } else {
+            url.searchParams.delete('basemap');
+            url.searchParams.set('style', name);
         }
-        if (!map.getLayer(sourceId)) {
-            map.addLayer({
-                id: sourceId,
-                type: 'raster',
-                source: sourceId,
-                layout: { visibility: 'none' },
-                paint: { 'raster-opacity': 1, 'raster-fade-duration': 0 }
-            });
-        }
-
-        function setBasemap(mode) {
-            var satelliteOn = mode === 'satellite';
-            basemapLayers.forEach(function (layer) {
-                if (map.getLayer(layer.id)) {
-                    map.setLayoutProperty(layer.id, 'visibility', satelliteOn ? 'none' : layer.visibility);
-                }
-            });
-            setVisibility([sourceId], satelliteOn);
-            document.querySelectorAll('.basemap-option').forEach(function (button) {
-                button.classList.toggle('is-active', button.getAttribute('data-basemap') === (satelliteOn ? 'satellite' : 'standard'));
-            });
-        }
-
-        document.querySelectorAll('.basemap-option').forEach(function (button) {
-            button.addEventListener('click', function () {
-                setBasemap(button.getAttribute('data-basemap'));
-            });
-        });
-
-        setBasemap((params.get('basemap') || '').toLowerCase() === 'satellite' ? 'satellite' : 'standard');
+        window.history.replaceState(null, '', url);
     }
 
-    map.on('load', function () {
-        setupBasemapSwitch();
+    function bindBasemapSelect() {
+        var select = document.getElementById('basemap-select');
+        if (!select) {
+            return;
+        }
+        select.value = currentBasemap;
+        select.addEventListener('change', function () {
+            applyBasemap(select.value);
+        });
+    }
 
+    function layerNameMaps() {
         var tileNames = {};
-        (settings.tileLayers || []).forEach(function (config) {
-            tileNames[config.name] = config;
-        });
+        (settings.tileLayers || []).forEach(function (config) { tileNames[config.name] = config; });
         var imageNames = {};
-        (settings.imageLayers || []).forEach(function (config) {
-            imageNames[config.name] = config;
-        });
+        (settings.imageLayers || []).forEach(function (config) { imageNames[config.name] = config; });
+        return { tile: tileNames, image: imageNames };
+    }
+
+    // Adds the currently-checked data layers on top of whatever basemap is loaded.
+    function setupDataLayers() {
+        layerIdsByName = {};
+        loadedGeoJson = {};
+        var names = layerNameMaps();
 
         document.querySelectorAll('#layer-list input[data-layer-id]').forEach(function (input) {
             var name = input.getAttribute('data-layer-id');
@@ -627,25 +649,34 @@
             var vectorName = input.getAttribute('data-vector');
             var imageName = input.getAttribute('data-image');
 
-            if (imageName && imageNames[imageName]) {
-                addImageLayer(imageNames[imageName], input.checked);
-                input.addEventListener('change', function () {
+            if (imageName && names.image[imageName]) {
+                addImageLayer(names.image[imageName], input.checked);
+            } else if (vectorName && names.tile[vectorName]) {
+                addVectorLayer(names.tile[vectorName], input.checked);
+            } else if (geojsonUrl && input.checked) {
+                loadedGeoJson[name] = addGeoJsonLayer({ name: name, url: geojsonUrl });
+            }
+        });
+    }
+
+    // Toggle listeners are attached once; they act on layerIdsByName / loadedGeoJson,
+    // which setupDataLayers rebuilds whenever the basemap changes.
+    function bindLayerControls() {
+        var names = layerNameMaps();
+
+        document.querySelectorAll('#layer-list input[data-layer-id]').forEach(function (input) {
+            var name = input.getAttribute('data-layer-id');
+            var geojsonUrl = input.getAttribute('data-geojson-url');
+            var vectorName = input.getAttribute('data-vector');
+            var imageName = input.getAttribute('data-image');
+
+            input.addEventListener('change', function () {
+                if ((imageName && names.image[imageName]) || (vectorName && names.tile[vectorName])) {
                     setVisibility(layerIdsByName[name] || [], input.checked);
-                });
-            } else if (vectorName && tileNames[vectorName]) {
-                addVectorLayer(tileNames[vectorName], input.checked);
-                input.addEventListener('change', function () {
-                    setVisibility(layerIdsByName[name] || [], input.checked);
-                });
-            } else if (geojsonUrl) {
-                var layer = { name: name, url: geojsonUrl };
-                if (input.checked) {
-                    loadedGeoJson[name] = addGeoJsonLayer(layer);
-                }
-                input.addEventListener('change', function () {
+                } else if (geojsonUrl) {
                     if (input.checked) {
                         if (!loadedGeoJson[name]) {
-                            loadedGeoJson[name] = addGeoJsonLayer(layer).then(function (ids) {
+                            loadedGeoJson[name] = addGeoJsonLayer({ name: name, url: geojsonUrl }).then(function (ids) {
                                 setVisibility(ids, true);
                                 return ids;
                             });
@@ -657,10 +688,15 @@
                     } else if (layerIdsByName[name]) {
                         setVisibility(layerIdsByName[name], false);
                     }
-                });
-            }
+                }
+            });
         });
+    }
 
+    map.on('load', function () {
+        bindBasemapSelect();
+        bindLayerControls();
+        setupDataLayers();
         setupSheetDrag();
         updateSheetMetrics();
     });
