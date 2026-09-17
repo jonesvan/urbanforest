@@ -105,6 +105,7 @@ scripts/
 docs/
   data-access.md      How to obtain the STL data
   tree-detection.md   Scope + M1 results for detecting every individual tree
+  future-tasks.md     Performance, data-source and model decisions ahead
 config.php            Shared configuration
 ```
 
