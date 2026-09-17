@@ -97,18 +97,22 @@ npm run tiles:trees -- --input=data-src/gottingen-crowns-full.geojson --out-dir=
 Fetch the Copernicus climate fields (CO₂ + 2 m temperature, both **off** by default):
 
 ```bash
+# key-free: CAMS surface CO2 + ERA5 2 m temperature via Open-Meteo (stdlib only)
+npm run fetch:climate -- --bbox=9.0,51.0,11.0,52.0 --date=2025-07-01 --time=12:00
+
+# or straight from the Copernicus Climate/Atmosphere Data Stores (free accounts):
 uv pip install --python .venv cdsapi xarray netcdf4
-export CDSAPI_KEY=<token>   # https://cds.climate.copernicus.eu  (ERA5, free account)
-export ADSAPI_KEY=<token>   # https://ads.atmosphere.copernicus.eu  (CAMS, free account)
-npm run fetch:climate -- --bbox=9.83,51.47,10.05,51.60 --date=2025-07-01 --time=12:00
-# or inspect the API requests first without downloading:
-#   .venv/bin/python scripts/fetch-climate.py --bbox=... --dry-run
+export CDSAPI_KEY=<token>   # https://cds.climate.copernicus.eu  (ERA5)
+export ADSAPI_KEY=<token>   # https://ads.atmosphere.copernicus.eu  (CAMS)
+.venv/bin/python scripts/fetch-climate.py --source=cds \\
+  --bbox=9.0,51.0,11.0,52.0 --date=2025-07-01 --time=12:00
 ```
 
 This writes `public/data/gottingen-temperature.geojson` (ERA5, Copernicus C3S) and
 `public/data/gottingen-co2.geojson` (CAMS) — one point per model grid cell. Both are
 coarse regional fields (~25 km for ERA5, ~11 km for CAMS), not urban measurements, and
-appear in the Layers sheet switched off.
+appear in the Layers sheet switched off. The Göttingen samples are committed, so the
+layers work without rerunning the pipeline.
 
 Serve:
 
