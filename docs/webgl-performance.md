@@ -1,11 +1,17 @@
-# WebGL / WebGPU rendering options for Leaflet
+# WebGL / WebGPU rendering options
+
+> **Outcome: migrated to MapLibre GL JS (WebGL2).** The app now renders the basemap,
+> the MVT crown tiles and the GeoJSON layers with MapLibre, replacing Leaflet +
+> VectorGrid (SVG) and the deck.gl prototype. MapLibre over-zooms the z17 vector tiles
+> natively, so crowns stay crisp at every zoom with no extra tiles and no SVG fallback.
+> See "Migration result" at the end. The survey below is kept for context.
 
 Goal: render the tree layers (65,835 crown polygons + 23,746 OSM points + 8,824 STL
-polygons) smoothly at **every** zoom level, without losing detail or fidelity. Today the
-crowns are MVT tiles rendered by Leaflet.VectorGrid with the **SVG** renderer
-(`rendererFactory: L.svg.tile`). That is crisp at all zooms but the DOM cost is real at low
-zooms; the earlier **canvas** renderer was blurry when over-zoomed because Leaflet scales
-the canvas bitmap.
+polygons) smoothly at **every** zoom level, without losing detail or fidelity. Before the
+migration the crowns were MVT tiles rendered by Leaflet.VectorGrid with the **SVG**
+renderer (`rendererFactory: L.svg.tile`). That is crisp at all zooms but the DOM cost is
+real at low zooms; the earlier **canvas** renderer was blurry when over-zoomed because
+Leaflet scales the canvas bitmap.
 
 This document surveys the practical ways to move that rendering onto the GPU while keeping
 Leaflet (and the PHP backend + MVT tiles) in place.
@@ -147,46 +153,34 @@ interface so the GPU backend can be swapped later.
   invisible and reduces GPU work at low zoom.
 - Add LOD styling (fill opacity/threshold by zoom) rather than dropping features.
 
-## Prototype status (implemented)
+## Migration result
 
-A deck.gl path is wired in behind a flag: **`?renderer=webgl`**.
+The app now uses **MapLibre GL JS 5.24 (WebGL2)** as the single renderer — Leaflet,
+Leaflet.VectorGrid and the deck.gl prototype were removed.
 
-- `index.php` loads the deck.gl UMD bundle (`deck.gl@9.4.0`) only for that flag.
-- `app.js` (`initDeck`) creates a deck overlay canvas over the Leaflet map, syncs the
-  camera on `move/zoom/resize`, renders the crowns with `MVTLayer` against the existing
-  `public/tiles/crowns/{z}/{x}/{y}.pbf`, and does picking via Leaflet clicks
-  (`deck.pickObject`). The canvas is `pointer-events:none` so Leaflet keeps pan/zoom.
-- The default (`?renderer=svg` / no flag) still uses Leaflet.VectorGrid + SVG, so the two
-  can be A/B compared without touching the dataset.
+- `index.php` loads MapLibre from a CDN; `#map` is the MapLibre container.
+- `config.php` provides a MapLibre-compatible raster basemap (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`).
+- `app.js` builds the style: a raster basemap, a **vector source** for the crown MVT tiles
+  (`tiles/crowns/{z}/{x}/{y}.pbf`, `minzoom`/`maxzoom` = 13/17) with fill+line layers, and
+  **GeoJSON sources** for the STL patches (fill) and OSM trees (circle).
+- Layer toggles map to `setLayoutProperty(..., 'visibility', ...)`; clicks on fill/circle
+  layers open a MapLibre popup.
+- URL params `?lat=&lng=&zoom=` still work.
 
-Observed (headless Chromium + SwiftShader screenshots): with `tileSize: 512` the crowns
-render as crisp GPU polygons over the basemap at **z13–z17**, equal to or sharper than the
-SVG path.
+Results:
 
-Finding on the "512-scheme tileset": **it is not needed.** deck's tile zoom depends on the
-layer's `tileSize` relative to its 512-based viewport:
+- Crowns render crisply at **z13–z19** (verified with headless screenshots); MapLibre
+  over-zooms the z17 vector tiles natively, so **no z18/z19 tiles and no SVG fallback** are
+  needed.
+- One gotcha solved: MapLibre requires **absolute** tile URLs and must keep the
+  `{z}/{x}/{y}` placeholders literal — `new URL()` percent-encoded the braces (`%7Bz%7D`)
+  and broke tile loading, so the URL is prefixed as a string instead.
 
-- `tileSize: 256` made deck request tile zoom = viewport zoom + 1 (one level too deep).
-- `tileSize: 512` (deck's default) makes it request tile zoom = viewport zoom, which is
-  exactly our existing `geojson-vt` tile grid. So the current tileset is consumed
-  correctly; only the renderer config was wrong.
-
-Known limitations:
-
-1. **Over-zoom above `maxZoom` does not render** in deck here (`zoom > maxZoom` is
-   documented to display `maxZoom` tiles, but they stay hidden in testing). To stay crisp
-   at every zoom, `initDeck()` also adds a Leaflet.VectorGrid **SVG layer for z18+**
-   (`minZoom: max_zoom + 1`); the WebGL layer covers z13–z17.
-2. **Automated verification is flaky** under headless SwiftShader — identical runs render
-   or do not, so the deck path must be spot-checked on real GPU hardware.
-3. Extra zoom levels (z18/z19 tiles) would remove the SVG fallback but add ~1.4k/5.6k tiles.
-
-### To make the WebGL path production-worthy
-
-- Confirm on real hardware (the headless flakiness is a test-environment artifact).
-- Decide the over-zoom strategy: either generate z18/z19 tiles, or move to **MapLibre GL
-  JS**, whose scheme handles over-zoom natively and could replace Leaflet entirely.
-- Then re-run the benchmark plan below and decide whether to make WebGL the default.
+Remaining (optional):
+- Sweep the OSM point layer (23.7k) and STL (8.8k polygons) into the same tiling pipeline if
+  they ever grow, so MapLibre streams them as tiles too.
+- Run the benchmark plan below on real hardware.
+- Revisit WebGPU when MapLibre ships it.
 
 ## Benchmark plan
 
@@ -194,14 +188,13 @@ Measure before/after on the same machine and viewport, with all layers on:
 
 - **Frame time / FPS** during continuous pan and zoom (`requestAnimationFrame` sampling).
 - **Long tasks** and first-render time (Chrome DevTools Performance).
-- **Draw calls / GPU memory** (deck.gl debug + DevTools performance monitor).
+- **Draw calls / GPU memory** (MapLibre + DevTools performance monitor).
 - **Transfer** per viewport (tiles fetched).
 - Targets: ≥60 fps pan/zoom on a mid-range laptop; no long tasks >50 ms during interaction;
   time-to-first-crowns < 1 s.
 
 ## Suggested next step
 
-Prototype **deck.gl overlaid on Leaflet** with `MVTLayer` pointed at the existing
-`public/tiles/crowns/{z}/{x}/{y}.pbf`, keep the current VectorGrid layer behind a feature
-flag, and compare with the benchmark plan. If the overlay/camera sync proves awkward,
-fall back to **Leaflet.glify** for the point layer and revisit MapLibre.
+Run the benchmark plan above on real hardware with MapLibre, and consider tiling the
+GeoJSON layers (STL, OSM trees) with the same pipeline so all layers stream as MVT.
+Revisit WebGPU when MapLibre GL JS ships it.

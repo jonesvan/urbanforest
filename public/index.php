@@ -15,6 +15,7 @@ if (is_dir($dataDir)) {
             'label' => ucwords(str_replace(['-', '_'], ' ', $name)),
             'url' => 'data/' . basename($file),
             'meta' => $config['layer_meta'][$name] ?? $config['default_layer_meta'],
+            'default' => $config['layer_defaults'][$name] ?? true,
         ];
     }
 }
@@ -50,7 +51,7 @@ $appSettings = [
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars($config['app_name']) ?> — street trees</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
@@ -71,10 +72,10 @@ $appSettings = [
     <?php else: ?>
         <ul id="layer-list">
             <?php foreach ($layers as $layer): ?>
-                <?php $active = $config['layer_defaults'][$layer['name']] ?? true; ?>
                 <li>
                     <label>
-                        <input type="checkbox" data-layer-url="<?= htmlspecialchars($layer['url']) ?>"<?= $active ? ' checked' : '' ?>>
+                        <input type="checkbox" data-layer-id="<?= htmlspecialchars($layer['name']) ?>"
+                               data-geojson-url="<?= htmlspecialchars($layer['url']) ?>"<?= $layer['default'] ? ' checked' : '' ?>>
                         <?= htmlspecialchars($layer['label']) ?>
                     </label>
                     <details class="layer-info">
@@ -84,10 +85,10 @@ $appSettings = [
                 </li>
             <?php endforeach; ?>
             <?php foreach ($config['tile_layers'] as $layer): ?>
-                <?php $active = $layer['default'] ?? true; ?>
                 <li>
                     <label>
-                        <input type="checkbox" data-tile-layer="<?= htmlspecialchars($layer['name']) ?>"<?= $active ? ' checked' : '' ?>>
+                        <input type="checkbox" data-layer-id="<?= htmlspecialchars($layer['name']) ?>"
+                               data-vector="<?= htmlspecialchars($layer['name']) ?>"<?= ($layer['default'] ?? true) ? ' checked' : '' ?>>
                         <?= htmlspecialchars($layer['label']) ?>
                     </label>
                     <details class="layer-info">
@@ -101,11 +102,7 @@ $appSettings = [
 </aside>
 
 <script id="app-settings" type="application/json"><?= json_encode($appSettings, JSON_UNESCAPED_SLASHES) ?></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
-<?php if (($_GET['renderer'] ?? '') === 'webgl'): ?>
-<script src="https://unpkg.com/deck.gl@9.4.0/dist.min.js"></script>
-<?php endif; ?>
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

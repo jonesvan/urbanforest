@@ -2,295 +2,235 @@
     'use strict';
 
     var settings = JSON.parse(document.getElementById('app-settings').textContent);
+    var params = new URLSearchParams(window.location.search);
     var mapConfig = settings.map;
 
-    var params = new URLSearchParams(window.location.search);
+    // config center is [lat, lng]; MapLibre wants [lng, lat]
     var center = [
-        parseFloat(params.get('lat')) || mapConfig.center[0],
-        parseFloat(params.get('lng')) || mapConfig.center[1]
+        params.get('lng') ? parseFloat(params.get('lng')) : mapConfig.center[1],
+        params.get('lat') ? parseFloat(params.get('lat')) : mapConfig.center[0]
     ];
-    var zoom = parseInt(params.get('zoom'), 10) || mapConfig.zoom;
+    var zoom = params.get('zoom') ? parseFloat(params.get('zoom')) : mapConfig.zoom;
 
-    var map = L.map('map', { preferCanvas: true }).setView(center, zoom);
+    var map = new maplibregl.Map({
+        container: 'map',
+        style: {
+            version: 8,
+            sources: {
+                basemap: {
+                    type: 'raster',
+                    tiles: [mapConfig.basemap],
+                    tileSize: 256,
+                    attribution: mapConfig.attribution
+                }
+            },
+            layers: [{ id: 'basemap', type: 'raster', source: 'basemap' }]
+        },
+        center: center,
+        zoom: zoom,
+        hash: false
+    });
 
-    L.tileLayer(mapConfig.basemap, {
-        attribution: mapConfig.attribution,
-        maxZoom: 19
-    }).addTo(map);
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
 
-    var streetTreeStyle = {
-        color: '#1b7f4d',
-        weight: 1,
-        fillColor: '#3fae6a',
-        fillOpacity: 0.5
-    };
+    map.on('error', function (event) {
+        console.error('maplibre-error:', event && event.error ? event.error.message : event);
+    });
 
-    var treePointStyle = {
-        radius: 2.5,
-        color: '#0f5132',
-        weight: 0.5,
-        fillColor: '#2ecc71',
-        fillOpacity: 0.9
-    };
+    var popup = new maplibregl.Popup({ closeButton: true, maxWidth: '320px' });
+
+    function escapeHtml(value) {
+        return String(value).replace(/[&<>"]/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        });
+    }
 
     function popupHtml(properties) {
-        var keys = Object.keys(properties);
+        var keys = Object.keys(properties || {});
         if (!keys.length) {
             return 'Tree';
         }
         return keys.map(function (key) {
-            return '<strong>' + key + ':</strong> ' + properties[key];
+            return '<strong>' + escapeHtml(key) + ':</strong> ' + escapeHtml(properties[key]);
         }).join('<br>');
     }
 
-    function addLayer(url) {
-        return fetch(url)
+    function bindPopup(layerIds) {
+        layerIds.forEach(function (id) {
+            map.on('click', id, function (event) {
+                popup.setLngLat(event.lngLat)
+                    .setHTML(popupHtml(event.features[0].properties))
+                    .addTo(map);
+            });
+            map.on('mouseenter', id, function () { map.getCanvas().style.cursor = 'pointer'; });
+            map.on('mouseleave', id, function () { map.getCanvas().style.cursor = ''; });
+        });
+    }
+
+    function absoluteUrl(url) {
+        if (/^https?:\/\//i.test(url)) {
+            return url;
+        }
+        // keep {z}/{x}/{y} placeholders intact (new URL() would percent-encode them)
+        var base = window.location.href.split('#')[0].split('?')[0];
+        return base.slice(0, base.lastIndexOf('/') + 1) + url.replace(/^\//, '');
+    }
+
+    function setVisibility(layerIds, visible) {
+        layerIds.forEach(function (id) {
+            if (map.getLayer(id)) {
+                map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+            }
+        });
+    }
+
+    // Map of layer name -> array of MapLibre layer ids
+    var layerIdsByName = {};
+    var loadedGeoJson = {};
+
+    function register(name, ids) {
+        layerIdsByName[name] = ids;
+        return ids;
+    }
+
+    function addVectorLayer(config, visible) {
+        var source = config.name;
+        if (!map.getSource(source)) {
+            map.addSource(source, {
+                type: 'vector',
+                tiles: [absoluteUrl(config.url)],
+                minzoom: config.min_zoom,
+                maxzoom: config.max_zoom
+            });
+        }
+        var color = config.fill_color || '#e67e22';
+        var fillId = source + '-fill';
+        var lineId = source + '-line';
+        if (!map.getLayer(fillId)) {
+            map.addLayer({
+                id: fillId,
+                type: 'fill',
+                source: source,
+                'source-layer': config.name,
+                paint: {
+                    'fill-color': color,
+                    'fill-opacity': 0.55
+                }
+            });
+            map.addLayer({
+                id: lineId,
+                type: 'line',
+                source: source,
+                'source-layer': config.name,
+                paint: {
+                    'line-color': '#8a4b12',
+                    'line-width': 0.5
+                }
+            });
+        }
+        var ids = register(config.name, [fillId, lineId]);
+        setVisibility(ids, visible);
+        bindPopup(ids);
+    }
+
+    function addGeoJsonLayer(layer) {
+        return fetch(layer.url)
             .then(function (response) {
                 if (!response.ok) {
-                    throw new Error('Failed to load ' + url + ': ' + response.status);
+                    throw new Error('Failed to load ' + layer.url + ': ' + response.status);
                 }
                 return response.json();
             })
             .then(function (geojson) {
-                var layer = L.geoJSON(geojson, {
-                    style: streetTreeStyle,
-                    pointToLayer: function (feature, latlng) {
-                        return L.circleMarker(latlng, treePointStyle);
-                    },
-                    onEachFeature: function (feature, featureLayer) {
-                        featureLayer.bindPopup(popupHtml(feature.properties || {}));
-                    }
-                }).addTo(map);
+                var first = geojson.features && geojson.features[0];
+                var geometryType = first ? first.geometry.type : 'Point';
+                var ids = [];
 
-                return layer;
+                if (!map.getSource(layer.name)) {
+                    map.addSource(layer.name, { type: 'geojson', data: geojson });
+                }
+
+                if (geometryType === 'Point' || geometryType === 'MultiPoint') {
+                    var circleId = layer.name + '-circle';
+                    map.addLayer({
+                        id: circleId,
+                        type: 'circle',
+                        source: layer.name,
+                        paint: {
+                            'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 1.5, 18, 4],
+                            'circle-color': '#2ecc71',
+                            'circle-stroke-color': '#0f5132',
+                            'circle-stroke-width': 0.5,
+                            'circle-opacity': 0.9
+                        }
+                    });
+                    ids.push(circleId);
+                } else {
+                    var fillId = layer.name + '-fill';
+                    var lineId = layer.name + '-line';
+                    map.addLayer({
+                        id: fillId,
+                        type: 'fill',
+                        source: layer.name,
+                        paint: { 'fill-color': '#3fae6a', 'fill-opacity': 0.5 }
+                    });
+                    map.addLayer({
+                        id: lineId,
+                        type: 'line',
+                        source: layer.name,
+                        paint: { 'line-color': '#1b7f4d', 'line-width': 1 }
+                    });
+                    ids.push(fillId, lineId);
+                }
+
+                register(layer.name, ids);
+                bindPopup(ids);
+                return ids;
             })
             .catch(function (error) {
                 console.error(error);
+                return [];
             });
     }
 
-    var loaded = {};
+    map.on('load', function () {
+        var tileNames = {};
+        (settings.tileLayers || []).forEach(function (config) {
+            tileNames[config.name] = config;
+        });
 
-    document.querySelectorAll('#layer-list input[data-layer-url]').forEach(function (input) {
-        var url = input.getAttribute('data-layer-url');
+        document.querySelectorAll('#layer-list input[data-layer-id]').forEach(function (input) {
+            var name = input.getAttribute('data-layer-id');
+            var geojsonUrl = input.getAttribute('data-geojson-url');
+            var vectorName = input.getAttribute('data-vector');
 
-        input.addEventListener('change', function () {
-            if (input.checked) {
-                if (!loaded[url]) {
-                    loaded[url] = addLayer(url);
-                } else {
-                    loaded[url].then(function (layer) {
-                        if (layer) {
-                            map.addLayer(layer);
+            if (vectorName && tileNames[vectorName]) {
+                addVectorLayer(tileNames[vectorName], input.checked);
+                input.addEventListener('change', function () {
+                    setVisibility(layerIdsByName[name] || [], input.checked);
+                });
+            } else if (geojsonUrl) {
+                var layer = { name: name, url: geojsonUrl };
+                if (input.checked) {
+                    loadedGeoJson[name] = addGeoJsonLayer(layer);
+                }
+                input.addEventListener('change', function () {
+                    if (input.checked) {
+                        if (!loadedGeoJson[name]) {
+                            loadedGeoJson[name] = addGeoJsonLayer(layer).then(function (ids) {
+                                setVisibility(ids, true);
+                                return ids;
+                            });
+                        } else {
+                            loadedGeoJson[name].then(function (ids) {
+                                setVisibility(ids, true);
+                            });
                         }
-                    });
-                }
-            } else if (loaded[url]) {
-                loaded[url].then(function (layer) {
-                    if (layer) {
-                        map.removeLayer(layer);
+                    } else if (layerIdsByName[name]) {
+                        setVisibility(layerIdsByName[name], false);
                     }
                 });
             }
         });
-
-        input.dispatchEvent(new Event('change'));
     });
-
-    // Vector-tile layers (pre-tiled with geojson-vt/vt-pbf), served per viewport.
-    // Renderer is switchable: default = Leaflet.VectorGrid (SVG), ?renderer=webgl = deck.gl.
-    var tileConfigs = settings.tileLayers || [];
-    var activeTiles = {};
-
-    function hexToRgba(hex, alpha) {
-        var value = String(hex).replace('#', '');
-        if (value.length === 3) {
-            value = value.split('').map(function (c) { return c + c; }).join('');
-        }
-        var n = parseInt(value, 16);
-        return [(n >> 16) & 255, (n >> 8) & 255, n & 255, alpha];
-    }
-
-    function tooltipText(properties) {
-        return Object.keys(properties).map(function (key) {
-            return key + ': ' + properties[key];
-        }).join('\n');
-    }
-
-    function bindTileToggles(onChange) {
-        document.querySelectorAll('#layer-list input[data-tile-layer]').forEach(function (input) {
-            var name = input.getAttribute('data-tile-layer');
-            activeTiles[name] = input.checked;
-            input.addEventListener('change', function () {
-                activeTiles[name] = input.checked;
-                onChange();
-            });
-        });
-    }
-
-    function initVectorGrid() {
-        var loaded = {};
-
-        function addTileLayer(config) {
-            var color = config.fill_color || '#e67e22';
-            var styles = {};
-            styles[config.name] = {
-                fill: true,
-                fillColor: color,
-                fillOpacity: 0.55,
-                color: color,
-                weight: 0.5
-            };
-
-            var layer = L.vectorGrid.protobuf(config.url, {
-                minZoom: config.min_zoom,
-                maxNativeZoom: config.max_zoom,
-                maxZoom: 19,
-                interactive: true,
-                vectorTileLayerStyles: styles,
-                rendererFactory: L.svg.tile
-            });
-
-            layer.on('click', function (event) {
-                L.popup()
-                    .setLatLng(event.latlng)
-                    .setContent(popupHtml(event.layer.properties || {}))
-                    .openOn(map);
-            });
-
-            return layer;
-        }
-
-        function sync() {
-            tileConfigs.forEach(function (config) {
-                var name = config.name;
-                if (activeTiles[name]) {
-                    if (!loaded[name]) {
-                        loaded[name] = addTileLayer(config);
-                    }
-                    map.addLayer(loaded[name]);
-                } else if (loaded[name]) {
-                    map.removeLayer(loaded[name]);
-                }
-            });
-        }
-
-        bindTileToggles(sync);
-        sync();
-    }
-
-    function initDeck() {
-        var canvas = document.createElement('canvas');
-        canvas.id = 'deck-canvas';
-        document.getElementById('map').appendChild(canvas);
-
-        function viewState() {
-            var center = map.getCenter();
-            return {
-                longitude: center.lng,
-                latitude: center.lat,
-                zoom: map.getZoom(),
-                bearing: 0,
-                pitch: 0
-            };
-        }
-
-        var deckOverlay = new deck.Deck({
-            canvas: canvas,
-            controller: false,
-            initialViewState: viewState(),
-            layers: [],
-            getTooltip: function (info) {
-                return info && info.object
-                    ? { text: tooltipText(info.object.properties || {}) }
-                    : null;
-            }
-        });
-
-        var fallback = {};
-
-        function updateLayers() {
-            var layers = tileConfigs.filter(function (config) {
-                return activeTiles[config.name];
-            }).map(function (config) {
-                return new deck.MVTLayer({
-                    id: config.name,
-                    data: config.url,
-                    minZoom: config.min_zoom,
-                    maxZoom: config.max_zoom,
-                    tileSize: 512,
-                    getFillColor: hexToRgba(config.fill_color || '#e67e22', 140),
-                    getLineColor: hexToRgba('#8a4b12', 200),
-                    lineWidthMinPixels: 0.5,
-                    pickable: true,
-                    autoHighlight: true,
-                    highlightColor: [255, 255, 255, 130]
-                });
-            });
-            deckOverlay.setProps({ layers: layers });
-
-            // deck does not render the over-zoom band, so above the native tile zoom we
-            // add the SVG VectorGrid layer (crisp, vector-scaled) instead.
-            tileConfigs.forEach(function (config) {
-                var name = config.name;
-                if (activeTiles[name] && !fallback[name]) {
-                    var color = config.fill_color || '#e67e22';
-                    var styles = {};
-                    styles[name] = { fill: true, fillColor: color, fillOpacity: 0.55, color: color, weight: 0.5 };
-                    fallback[name] = L.vectorGrid.protobuf(config.url, {
-                        minZoom: config.max_zoom + 1,
-                        maxNativeZoom: config.max_zoom,
-                        maxZoom: 19,
-                        interactive: true,
-                        vectorTileLayerStyles: styles,
-                        rendererFactory: L.svg.tile
-                    });
-                    fallback[name].on('click', function (event) {
-                        L.popup()
-                            .setLatLng(event.latlng)
-                            .setContent(popupHtml(event.layer.properties || {}))
-                            .openOn(map);
-                    });
-                    map.addLayer(fallback[name]);
-                } else if (!activeTiles[name] && fallback[name]) {
-                    map.removeLayer(fallback[name]);
-                    fallback[name] = null;
-                }
-            });
-        }
-
-        map.on('move zoom resize', function () {
-            deckOverlay.setProps({ viewState: viewState() });
-        });
-
-        // deck's canvas has pointer-events:none, so Leaflet keeps pan/zoom and we pick on click
-        map.on('click', function (event) {
-            var point = map.latLngToContainerPoint(event.latlng);
-            var info = deckOverlay.pickObject({
-                x: point.x,
-                y: point.y,
-                radius: 3,
-                layerIds: tileConfigs.map(function (config) { return config.name; })
-            });
-            if (info && info.object) {
-                L.popup()
-                    .setLatLng(event.latlng)
-                    .setContent(popupHtml(info.object.properties || {}))
-                    .openOn(map);
-            }
-        });
-
-        bindTileToggles(updateLayers);
-        updateLayers();
-    }
-
-    var renderer = params.get('renderer') || 'svg';
-    if (renderer === 'webgl' && typeof window.deck !== 'undefined' && window.deck.MVTLayer) {
-        initDeck();
-    } else {
-        if (renderer === 'webgl') {
-            console.warn('deck.gl not available, falling back to the VectorGrid renderer');
-        }
-        initVectorGrid();
-    }
 })();

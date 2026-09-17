@@ -10,7 +10,7 @@ return [
     'map' => [
         'center' => [51.5336, 9.9352],
         'zoom' => 13,
-        'basemap' => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'basemap' => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     ],
 

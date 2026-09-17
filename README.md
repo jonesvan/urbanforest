@@ -4,21 +4,22 @@ A web app that visualizes street trees in urban areas, combining [ESA Copernicus
 
 ## What it does
 
-`urbanforest` renders street and urban trees as an interactive Leaflet map over an OpenStreetMap basemap. It combines two layers:
+`urbanforest` renders street and urban trees as an interactive MapLibre GL JS (WebGL) map over an OpenStreetMap basemap. It combines three layers:
 
 - **Tree patches** from the **Urban Atlas Street Tree Layer (STL)** — a Copernicus Land Monitoring Service product derived from high-resolution satellite imagery, mapping contiguous rows and patches of trees in European Functional Urban Areas ("Erfasst sogar Einzel- und Straßenbäume in städtischen Gebieten").
 - **Individual trees** from **OpenStreetMap** (`natural=tree` nodes) — one point per mapped tree.
+- **Detected tree crowns** from **LiDAR** (`DOM1 − DGM1` canopy height model + watershed) — served as MVT vector tiles.
 
 > The STL is a *patch* product: its Minimum Mapping Unit is 0.05 ha (500 m²) with a 10 m minimum width, so a lone tree only appears where it reaches that size. The goal of showing **every individual tree** is therefore served by the OSM point layer, with the STL providing the satellite-derived picture of tree cover.
 
 ## Stack
 
-- **Web app:** PHP (`public/index.php`), HTML, CSS, vanilla JavaScript + [Leaflet](https://leafletjs.com/)
+- **Web app:** PHP (`public/index.php`), HTML, CSS, vanilla JavaScript + [MapLibre GL JS](https://maplibre.org/)
 - **Data pipeline:** Node scripts (`scripts/*.mjs`) run once, offline
-- **Data format:** preprocessed GeoJSON (WGS84 / EPSG:4326) served as static files
+- **Data format:** preprocessed GeoJSON (WGS84 / EPSG:4326) + MVT vector tiles, served as static files
 
-No build step and no JS framework in the frontend — a PHP-served site with Leaflet
-consuming preprocessed GeoJSON. Node is only used for the offline data pipeline.
+No build step and no JS framework in the frontend — a PHP-served site with MapLibre GL JS
+consuming preprocessed MVT tiles and GeoJSON. Node is only used for the offline data pipeline.
 
 ## Data sources
 
@@ -129,7 +130,7 @@ flyctl tokens create deploy --app urbanforest | gh secret set FLY_API_TOKEN --re
 public/            Web root
   index.php        Entry point, renders the map page
   assets/css/      Styles
-  assets/js/       Leaflet map logic
+  assets/js/       MapLibre GL JS map logic
   data/            Preprocessed GeoJSON layers (generated)
 public/tiles/
   crowns/          Vector tiles (MVT) for the detected tree crowns
@@ -147,14 +148,14 @@ docs/
   data-access.md      How to obtain the STL data
   tree-detection.md   Scope + results for detecting every individual tree
   future-tasks.md     Performance, data-source and model decisions ahead
-  webgl-performance.md Options for GPU (WebGL/WebGPU) rendering in Leaflet
+  webgl-performance.md GPU rendering research + MapLibre migration notes
 config.php            Shared configuration
 ```
 
 ## Status
 
 Working for Göttingen: STL tree patches, 23,746 individual OSM trees, and LiDAR-detected
-tree crowns, rendered with Leaflet.
+tree crowns, rendered with MapLibre GL JS (WebGL).
 
 Detection route (see [`docs/tree-detection.md`](docs/tree-detection.md)):
 - RGB crown detection (DeepForest on DOP20) failed because the flights are leaf-off.
