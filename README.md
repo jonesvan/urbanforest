@@ -94,25 +94,27 @@ npm run tiles -- --input=data-src/gottingen-crowns-full.geojson --out-dir=public
 npm run tiles:trees -- --input=data-src/gottingen-crowns-full.geojson --out-dir=public/data/trees
 ```
 
-Fetch the Copernicus climate fields (CO₂ + 2 m temperature, both **off** by default):
+Fetch the Copernicus climate fields (CO₂ + 2 m temperature heatmap overlays, both **off** by default):
 
 ```bash
-# key-free: CAMS surface CO2 + ERA5 2 m temperature via Open-Meteo (stdlib only)
-npm run fetch:climate -- --bbox=9.0,51.0,11.0,52.0 --date=2025-07-01 --time=12:00
+# key-free: CAMS surface CO2 + ERA5 2 m temperature via Open-Meteo (needs numpy)
+uv pip install --python .venv numpy    # only numpy; the default backend is stdlib otherwise
+npm run fetch:climate -- --bbox=9.0,51.0,11.0,52.0 --date=2026-09-10 --time=12:00
 
 # or straight from the Copernicus Climate/Atmosphere Data Stores (free accounts):
 uv pip install --python .venv cdsapi xarray netcdf4
 export CDSAPI_KEY=<token>   # https://cds.climate.copernicus.eu  (ERA5)
 export ADSAPI_KEY=<token>   # https://ads.atmosphere.copernicus.eu  (CAMS)
 .venv/bin/python scripts/fetch-climate.py --source=cds \\
-  --bbox=9.0,51.0,11.0,52.0 --date=2025-07-01 --time=12:00
+  --bbox=9.0,51.0,11.0,52.0 --date=2026-09-10 --time=12:00
 ```
 
-This writes `public/data/gottingen-temperature.geojson` (ERA5, Copernicus C3S) and
-`public/data/gottingen-co2.geojson` (CAMS) — one point per model grid cell. Both are
-coarse regional fields (~25 km for ERA5, ~11 km for CAMS), not urban measurements, and
-appear in the Layers sheet switched off. The Göttingen samples are committed, so the
-layers work without rerunning the pipeline.
+The coarse model grid (~25 km ERA5, ~11 km CAMS) is inverse-distance interpolated onto a
+2048-px raster and written as a georeferenced PNG — `public/data/gottingen-temperature.png`
+and `public/data/gottingen-co2.png` — that MapLibre draws as an `image` overlay above the
+basemap. A plain GeoJSON copy of the source cells is saved under `data-src/climate/`. Both
+layers are regional fields, not urban measurements, and appear in the Layers sheet switched
+off. The Göttingen images are committed, so the layers work without rerunning the pipeline.
 
 Serve:
 
@@ -188,7 +190,7 @@ scripts/
   fetch-osm-trees.mjs    Download individual OSM trees as GeoJSON points
   fetch-osm-buildings.mjs Download OSM building footprints (used as a mask)
   fetch-dop20.mjs        Download DOP10/DOP20 orthophoto tiles via the LGLN STAC
-  fetch-climate.py       Fetch ERA5 temperature + CAMS CO2 (CDS/ADS) as GeoJSON
+  fetch-climate.py       Fetch ERA5 temperature + CAMS CO2 and render heatmap PNGs
   build-chm.py           Build a canopy height model (DOM1 - DGM1) from STAC COGs
   detect-crowns.py       Detect individual tree crowns from a CHM (watershed)
   build-crown-tiles.mjs  Tile a crown GeoJSON into MVT vector tiles

@@ -183,7 +183,10 @@
         Object.keys(layerIdsByName).forEach(function (name) {
             ids = ids.concat(layerIdsByName[name]);
         });
-        ids = ids.filter(function (id) { return map.getLayer(id); });
+        ids = ids.filter(function (id) {
+            var layer = map.getLayer(id);
+            return layer && layer.type !== 'raster';
+        });
         if (ids.length && !map.queryRenderedFeatures(event.point, { layers: ids }).length) {
             hideFeature();
         }
@@ -359,6 +362,37 @@
         return ids;
     }
 
+    function addImageLayer(config, visible) {
+        var sourceId = 'image-' + config.name;
+        var bounds = config.bounds; // [west, south, east, north]
+        if (!map.getSource(sourceId)) {
+            map.addSource(sourceId, {
+                type: 'image',
+                url: absoluteUrl(config.image),
+                coordinates: [
+                    [bounds[0], bounds[3]], // top-left (west, north)
+                    [bounds[2], bounds[3]], // top-right
+                    [bounds[2], bounds[1]], // bottom-right
+                    [bounds[0], bounds[1]]  // bottom-left
+                ]
+            });
+        }
+        var layerId = sourceId + '-layer';
+        if (!map.getLayer(layerId)) {
+            map.addLayer({
+                id: layerId,
+                type: 'raster',
+                source: sourceId,
+                paint: {
+                    'raster-opacity': config.opacity != null ? config.opacity : 0.75,
+                    'raster-fade-duration': 0
+                }
+            });
+        }
+        register(config.name, [layerId]);
+        setVisibility([layerId], visible);
+    }
+
     function addVectorLayer(config, visible) {
         var source = config.name;
         if (!map.getSource(source)) {
@@ -523,13 +557,23 @@
         (settings.tileLayers || []).forEach(function (config) {
             tileNames[config.name] = config;
         });
+        var imageNames = {};
+        (settings.imageLayers || []).forEach(function (config) {
+            imageNames[config.name] = config;
+        });
 
         document.querySelectorAll('#layer-list input[data-layer-id]').forEach(function (input) {
             var name = input.getAttribute('data-layer-id');
             var geojsonUrl = input.getAttribute('data-geojson-url');
             var vectorName = input.getAttribute('data-vector');
+            var imageName = input.getAttribute('data-image');
 
-            if (vectorName && tileNames[vectorName]) {
+            if (imageName && imageNames[imageName]) {
+                addImageLayer(imageNames[imageName], input.checked);
+                input.addEventListener('change', function () {
+                    setVisibility(layerIdsByName[name] || [], input.checked);
+                });
+            } else if (vectorName && tileNames[vectorName]) {
                 addVectorLayer(tileNames[vectorName], input.checked);
                 input.addEventListener('change', function () {
                     setVisibility(layerIdsByName[name] || [], input.checked);

@@ -44,6 +44,7 @@ $appSettings = [
     'map' => $config['map'],
     'layers' => $layers,
     'tileLayers' => $config['tile_layers'],
+    'imageLayers' => $config['image_layers'],
 ];
 ?>
 <!DOCTYPE html>
@@ -78,7 +79,7 @@ $appSettings = [
         <span class="panel-chevron" aria-hidden="true"></span>
     </div>
     <div class="panel-body" id="panel-body">
-    <?php if ($layers === [] && $config['tile_layers'] === []): ?>
+    <?php if ($layers === [] && $config['tile_layers'] === [] && $config['image_layers'] === []): ?>
         <p class="empty">
             No data yet. Run the pipeline in <code>scripts/</code> to populate
             <code>public/data/</code> and <code>public/tiles/</code>.
@@ -104,6 +105,20 @@ $appSettings = [
                     <label class="layer-toggle">
                         <input type="checkbox" data-layer-id="<?= htmlspecialchars($layer['name']) ?>"
                                data-vector="<?= htmlspecialchars($layer['name']) ?>"<?= ($layer['default'] ?? true) ? ' checked' : '' ?>>
+                        <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+                        <span class="layer-name"><?= htmlspecialchars($layer['label']) ?></span>
+                    </label>
+                    <details class="layer-info">
+                        <summary>Data &amp; model</summary>
+                        <?= render_layer_meta($layer['meta'] ?? []) ?>
+                    </details>
+                </li>
+            <?php endforeach; ?>
+            <?php foreach ($config['image_layers'] as $layer): ?>
+                <li class="layer-item">
+                    <label class="layer-toggle">
+                        <input type="checkbox" data-layer-id="<?= htmlspecialchars($layer['name']) ?>"
+                               data-image="<?= htmlspecialchars($layer['name']) ?>"<?= ($layer['default'] ?? true) ? ' checked' : '' ?>>
                         <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
                         <span class="layer-name"><?= htmlspecialchars($layer['label']) ?></span>
                     </label>

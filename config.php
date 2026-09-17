@@ -71,48 +71,48 @@ return [
             'Licence' => 'ODbL',
             'API' => 'https://overpass-api.de/api/interpreter',
         ],
-        'gottingen-temperature' => [
-            'Source' => 'Copernicus Climate Change Service (C3S) — ERA5 reanalysis',
-            'Provider' => 'ECMWF on behalf of the European Union',
-            'Variable' => '2 m air temperature',
-            'Data' => 'Hourly reanalysis, sampled on the native ERA5 grid (~0.25°)',
-            'Access' => 'Open-Meteo Historical Weather API; direct CDS route in scripts/fetch-climate.py',
-            'Known limits' => '~25 km grid cell — a coarse regional value, not an urban heat-island measurement',
-            'Licence' => 'Copernicus open data (CC-BY-4.0)',
-            'Attribution' => 'Contains modified Copernicus Climate Change Service information (ERA5); data via Open-Meteo',
-            'Docs' => 'https://cds.climate.copernicus.eu',
-        ],
-        'gottingen-co2' => [
-            'Source' => 'Copernicus Atmosphere Monitoring Service (CAMS) — global greenhouse gas forecasts',
-            'Provider' => 'ECMWF on behalf of the European Union',
-            'Variable' => 'Surface carbon dioxide (CO₂)',
-            'Data' => 'Global forecast fields (surface), ~0.1°',
-            'Access' => 'Open-Meteo Air Quality API; direct ADS route in scripts/fetch-climate.py',
-            'Known limits' => 'Well-mixed background CO₂ — not a local emission inventory',
-            'Licence' => 'Copernicus open data (CC-BY-4.0)',
-            'Attribution' => 'Copernicus Atmosphere Monitoring Service (CAMS) information; data via Open-Meteo',
-            'Docs' => 'https://ads.atmosphere.copernicus.eu',
-        ],
     ],
 
-    // Optional per-layer rendering hints for GeoJSON layers.
-    // ramp: color scale mapped linearly across domain (min, max) on `property`.
-    'layer_styles' => [
-        'gottingen-temperature' => [
-            'type' => 'circle',
-            'property' => 'value',
-            'unit' => '°C',
-            'domain' => [-10, 35],
-            'ramp' => ['#1d4ed8', '#22d3ee', '#facc15', '#f97316', '#dc2626'],
-            'stroke' => 'rgba(255, 255, 255, 0.85)',
+    // Georeferenced PNG heatmap overlays (MapLibre "image" source), drawn over
+    // the basemap. bounds = [west, south, east, north] must match the PNG extent.
+    'image_layers' => [
+        [
+            'name' => 'temperature',
+            'label' => 'Air temperature (heatmap)',
+            'image' => 'data/gottingen-temperature.png',
+            'bounds' => [9.0, 51.0, 11.0, 52.0],
+            'opacity' => 0.72,
+            'default' => false,
+            'meta' => [
+                'Source' => 'Copernicus Climate Change Service (C3S) — ERA5 reanalysis',
+                'Provider' => 'ECMWF on behalf of the European Union',
+                'Variable' => '2 m air temperature',
+                'Rendering' => 'Inverse-distance interpolation of the native ERA5 grid (~0.25°); colour range auto-scaled',
+                'Access' => 'Open-Meteo Historical Weather API; direct CDS route in scripts/fetch-climate.py',
+                'Known limits' => '~25 km grid cell — a coarse regional field, not an urban heat-island measurement',
+                'Licence' => 'Copernicus open data (CC-BY-4.0)',
+                'Attribution' => 'Contains modified Copernicus Climate Change Service information (ERA5); data via Open-Meteo',
+                'Docs' => 'https://cds.climate.copernicus.eu',
+            ],
         ],
-        'gottingen-co2' => [
-            'type' => 'circle',
-            'property' => 'value',
-            'unit' => 'ppm',
-            'domain' => [395, 440],
-            'ramp' => ['#a7f3d0', '#fde68a', '#fb923c', '#ef4444', '#7f1d1d'],
-            'stroke' => 'rgba(255, 255, 255, 0.85)',
+        [
+            'name' => 'co2',
+            'label' => 'Carbon dioxide (heatmap)',
+            'image' => 'data/gottingen-co2.png',
+            'bounds' => [9.0, 51.0, 11.0, 52.0],
+            'opacity' => 0.72,
+            'default' => false,
+            'meta' => [
+                'Source' => 'Copernicus Atmosphere Monitoring Service (CAMS) — global greenhouse gas forecasts',
+                'Provider' => 'ECMWF on behalf of the European Union',
+                'Variable' => 'Surface carbon dioxide (CO₂)',
+                'Rendering' => 'Inverse-distance interpolation of the native CAMS grid (~0.1°); colour range auto-scaled',
+                'Access' => 'Open-Meteo Air Quality API; direct ADS route in scripts/fetch-climate.py',
+                'Known limits' => 'Well-mixed background CO₂ — not a local emission inventory',
+                'Licence' => 'Copernicus open data (CC-BY-4.0)',
+                'Attribution' => 'Copernicus Atmosphere Monitoring Service (CAMS) information; data via Open-Meteo',
+                'Docs' => 'https://ads.atmosphere.copernicus.eu',
+            ],
         ],
     ],
 
@@ -124,8 +124,6 @@ return [
     'layer_defaults' => [
         'gottingen-street-trees' => false,
         'gottingen-trees' => false,
-        'gottingen-temperature' => false,
-        'gottingen-co2' => false,
     ],
 
     'copernicus' => [
