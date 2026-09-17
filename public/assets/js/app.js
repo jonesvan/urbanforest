@@ -103,7 +103,8 @@
                 maxzoom: config.max_zoom
             });
         }
-        var color = config.fill_color || '#e67e22';
+        var color = config.fill_color || '#2f9e44';
+        var lineColor = config.line_color || '#1b6e34';
         var fillId = source + '-fill';
         var lineId = source + '-line';
         if (!map.getLayer(fillId)) {
@@ -123,7 +124,7 @@
                 source: source,
                 'source-layer': config.name,
                 paint: {
-                    'line-color': '#8a4b12',
+                    'line-color': lineColor,
                     'line-width': 0.5
                 }
             });

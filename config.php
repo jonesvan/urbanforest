@@ -22,7 +22,8 @@ return [
             'min_zoom' => 13,
             'max_zoom' => 17,
             'default' => true,
-            'fill_color' => '#e67e22',
+            'fill_color' => '#2f9e44',
+            'line_color' => '#1b6e34',
             'meta' => [
                 'Source' => 'LGLN OpenGeoData — DOM1 (surface) + DGM1 (terrain), airborne LiDAR',
                 'Provider' => 'LGLN Niedersachsen',

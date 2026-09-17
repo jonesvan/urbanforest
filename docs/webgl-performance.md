@@ -153,6 +153,27 @@ interface so the GPU backend can be swapped later.
   invisible and reduces GPU work at low zoom.
 - Add LOD styling (fill opacity/threshold by zoom) rather than dropping features.
 
+## High-DPI (retina) displays
+
+No changes are required for the vector data:
+
+- MapLibre GL JS is device-pixel aware — it sizes its WebGL canvas from
+  `window.devicePixelRatio` (and guards huge buffers via `maxCanvasSize`), so the MVT
+  crowns and the GeoJSON layers render at native device resolution and stay sharp on
+  retina/HiDPI screens.
+- Because they are vectors, crowns, STL patches and OSM trees are re-rasterised at the
+  device resolution on every frame; there is no bitmap to blur.
+
+The only soft element on a HiDPI screen is the **raster basemap** (OpenStreetMap serves
+256 px tiles, and there is no `@2x` variant). Options if that matters:
+
+- Switch to a **vector basemap** (MapLibre demo tiles, OpenFreeMap, Protomaps, Stadia) —
+  crisp at any DPR and supports fractional zoom; needs a style URL + glyphs.
+- Or use a raster provider that offers 512 px tiles and set `tileSize: 512`.
+
+Also note the layer colours blend more when a layer is semi-transparent; the crown fill
+uses `fill-opacity: 0.55`.
+
 ## Migration result
 
 The app now uses **MapLibre GL JS 5.24 (WebGL2)** as the single renderer — Leaflet,
