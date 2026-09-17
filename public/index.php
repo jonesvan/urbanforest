@@ -21,6 +21,7 @@ if (is_dir($dataDir)) {
 $appSettings = [
     'map' => $config['map'],
     'layers' => $layers,
+    'tileLayers' => $config['tile_layers'],
 ];
 ?>
 <!DOCTYPE html>
@@ -42,7 +43,7 @@ $appSettings = [
 
 <aside id="layer-panel" class="panel">
     <h2>Layers</h2>
-    <?php if ($layers === []): ?>
+    <?php if ($layers === [] && $config['tile_layers'] === []): ?>
         <p class="empty">
             No data yet. Run <code>scripts/fetch-stl.php</code> and
             <code>scripts/stl-to-geojson.sh</code> to populate <code>public/data/</code>.
@@ -57,12 +58,21 @@ $appSettings = [
                     </label>
                 </li>
             <?php endforeach; ?>
+            <?php foreach ($config['tile_layers'] as $layer): ?>
+                <li>
+                    <label>
+                        <input type="checkbox" data-tile-layer="<?= htmlspecialchars($layer['name']) ?>" checked>
+                        <?= htmlspecialchars($layer['label']) ?>
+                    </label>
+                </li>
+            <?php endforeach; ?>
         </ul>
     <?php endif; ?>
 </aside>
 
 <script id="app-settings" type="application/json"><?= json_encode($appSettings, JSON_UNESCAPED_SLASHES) ?></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

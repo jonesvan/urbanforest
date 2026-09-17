@@ -38,7 +38,7 @@ using the default SVG renderer, with no clustering, simplification or compressio
 ### 1.3 Data delivery (backend)
 | Task | Why | Effort |
 | --- | --- | --- |
-| **Vector tiles** via tippecanoe → PMTiles/MVT, served statically | The real fix for large layers: only visible tiles are fetched/rendered | M–L |
+| **Vector tiles** via geojson-vt → MVT, served statically | **Done for crowns** (`scripts/build-crown-tiles.mjs` → `public/tiles/crowns`); still to do for OSM trees/STL | M–L |
 | Serve FlatGeobuf directly (range requests + spatial index) instead of GeoJSON | Leaflet/`flatgeobuf` reader fetches only the needed bbox; no tiling build step | M |
 | PHP bbox API (`api/layers.php?bbox=…&layer=…`) with a spatial index | Simple dynamic filtering; needs a fast spatial store (SQLite/R-tree) or pre-tiling | M |
 | Gzip/Brotli + cache headers (`Cache-Control`, `ETag`) | GeoJSON compresses ~5–10×; the PHP dev server does neither | S |
@@ -142,11 +142,10 @@ leaf-off imagery (see `docs/tree-detection.md`).
 
 | # | Task | Impact | Effort |
 | --- | --- | --- | --- |
-| 1 | Canvas renderer + clustering + gzip | High | S |
-| 2 | Tune CHM crown detector (over-merge/splitting) + vector tiles for full-city | High | L |
-| 3 | Investigate municipal tree cadastre | High | S |
-| 4 | Leaf-on imagery survey (gating for imagery models) | High | S |
-| 5 | Vector tiles / FlatGeobuf delivery | Medium | M–L |
-| 6 | Labelled reference set + evaluation (P/R/F1, not just OSM agreement) | Medium | M |
-| 7 | Licensing/attribution panel + provenance fields | Medium | S |
-| 8 | Python lockfile + CI | Low | S |
+| 1 | Tune CHM crown detector (over-merge/splitting) | High | M |
+| 2 | Investigate municipal tree cadastre | High | S |
+| 3 | Leaf-on imagery survey (gating for imagery models) | High | S |
+| 4 | Canvas + clustering + gzip for the GeoJSON layers | Medium | S |
+| 5 | Labelled reference set + evaluation (P/R/F1, not just OSM agreement) | Medium | M |
+| 6 | Licensing/attribution panel + provenance fields | Medium | S |
+| 7 | Python lockfile + CI | Low | S |

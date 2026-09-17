@@ -84,11 +84,12 @@ Detect tree crowns from LiDAR (Python env via `uv`):
 
 ```bash
 uv venv --python 3.11 .venv
-uv pip install --python .venv deepforest scikit-image   # deepforest only needed for RGB
+uv pip install --python .venv scikit-image                    # deepforest only for the RGB route
 .venv/bin/python scripts/build-chm.py --bbox=51.520,9.915,51.545,9.955 --out-dir data-src/chm-dom1
 node scripts/fetch-osm-buildings.mjs --bbox=51.520,9.915,51.545,9.955 --out=data-src/buildings.geojson
 .venv/bin/python scripts/detect-crowns.py --input-dir data-src/chm-dom1 \
-  --buildings data-src/buildings.geojson --output public/data/gottingen-crowns.geojson
+  --buildings data-src/buildings.geojson --output data-src/gottingen-crowns-full.geojson
+npm run tiles -- --input=data-src/gottingen-crowns-full.geojson --out-dir=public/tiles/crowns
 ```
 
 Serve:
@@ -101,8 +102,10 @@ Then open http://localhost:8000.
 
 Göttingen is pre-generated and committed — `public/data/gottingen-street-trees.geojson`
 (STL 2021, 8,824 tree patches), `public/data/gottingen-trees.geojson` (23,746 individual
-OSM trees) and `public/data/gottingen-crowns-pilot.geojson` (4,626 LiDAR-detected crowns)
-— so the map shows data without rerunning the pipeline.
+OSM trees) and `public/tiles/crowns/` (65,835 LiDAR-detected crowns as vector tiles) — so
+the map shows data without rerunning the pipeline.
+
+The map view can be set via URL, e.g. `?lat=51.5336&lng=9.9352&zoom=16`.
 
 ## Layout
 
@@ -112,6 +115,8 @@ public/            Web root
   assets/css/      Styles
   assets/js/       Leaflet map logic
   data/            Preprocessed GeoJSON layers (generated)
+public/tiles/
+  crowns/          Vector tiles (MVT) for the detected tree crowns
 scripts/
   fetch-stl.mjs          Download STL tree patches from Copernicus for an FUA
   convert-stl.mjs        Convert .fgb -> .geojson (EPSG:3035 -> 4326)
@@ -120,6 +125,7 @@ scripts/
   fetch-dop20.mjs        Download DOP10/DOP20 orthophoto tiles via the LGLN STAC
   build-chm.py           Build a canopy height model (DOM1 - DGM1) from STAC COGs
   detect-crowns.py       Detect individual tree crowns from a CHM (watershed)
+  build-crown-tiles.mjs  Tile a crown GeoJSON into MVT vector tiles
   detect-trees.py        DeepForest RGB detection (experimental, failed on leaf-off)
 docs/
   data-access.md      How to obtain the STL data
@@ -130,15 +136,15 @@ config.php            Shared configuration
 
 ## Status
 
-Working for Göttingen: STL tree patches, 23,746 individual OSM trees, and a pilot layer of
-detected tree crowns, rendered with Leaflet.
+Working for Göttingen: STL tree patches, 23,746 individual OSM trees, and LiDAR-detected
+tree crowns, rendered with Leaflet.
 
 Detection route (see [`docs/tree-detection.md`](docs/tree-detection.md)):
 - RGB crown detection (DeepForest on DOP20) failed because the flights are leaf-off.
 - **LiDAR CHM (`DOM1 − DGM1`) + watershed works** — 88% of OSM trees fall inside a
   detected crown (vs 11% for RGB), with OSM building footprints used as a mask.
-- Served pilot: `public/data/gottingen-crowns-pilot.geojson` (4,626 crowns over ~1.6 km²).
-  Full-city output is ~46,800 crowns / ~30 MB — that needs vector tiles before serving.
+- Crowns are served as **vector tiles** (`public/tiles/crowns`, 65,835 crowns) so the
+  browser only fetches the tiles in view instead of a 41 MB GeoJSON.
 
 ## Goals
 

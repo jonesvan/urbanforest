@@ -9,7 +9,8 @@
     "fetch:trees": "node scripts/fetch-osm-trees.mjs",
     "fetch:ortho": "node scripts/fetch-dop20.mjs",
     "convert": "node scripts/convert-stl.mjs",
-    "serve": "php -S localhost:8000 -t public"
+    "serve": "php -S localhost:8000 -t public",
+    "tiles": "node scripts/build-crown-tiles.mjs"
   },
   "repository": {
     "type": "git",
@@ -19,6 +20,8 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1134.0",
     "flatgeobuf": "^4.4.0",
-    "proj4": "^2.22.0"
+    "geojson-vt": "^5.0.2",
+    "proj4": "^2.22.0",
+    "vt-pbf": "^3.1.3"
   }
 }

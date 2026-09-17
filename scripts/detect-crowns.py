@@ -34,7 +34,7 @@ def parse_args():
     p.add_argument("--min-area", type=float, default=4.0, help="minimum crown area (m²)")
     p.add_argument("--max-area", type=float, default=400.0, help="maximum crown area (m²)")
     p.add_argument("--min-distance", type=int, default=2, help="minimum distance between crown tops (px)")
-    p.add_argument("--sigma", type=float, default=1.0, help="gaussian smoothing sigma (px)")
+    p.add_argument("--sigma", type=float, default=0.5, help="gaussian smoothing sigma (px)")
     p.add_argument("--buildings", default=None, help="GeoJSON of building footprints to exclude")
     p.add_argument("--simplify", type=float, default=0.5, help="polygon simplification tolerance (m)")
     return p.parse_args()

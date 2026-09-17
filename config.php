@@ -9,9 +9,20 @@ return [
 
     'map' => [
         'center' => [51.5336, 9.9352],
-        'zoom' => 12,
+        'zoom' => 13,
         'basemap' => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    ],
+
+    'tile_layers' => [
+        [
+            'name' => 'crowns',
+            'label' => 'Detected tree crowns (LiDAR)',
+            'url' => 'tiles/crowns/{z}/{x}/{y}.pbf',
+            'min_zoom' => 13,
+            'max_zoom' => 15,
+            'fill_color' => '#e67e22',
+        ],
     ],
 
     'copernicus' => [

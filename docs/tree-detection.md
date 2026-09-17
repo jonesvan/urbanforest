@@ -229,15 +229,13 @@ fails over bare deciduous trees — median CHM at OSM tree locations was only **
 (vs **12.9 m** for LiDAR DOM1−DGM1). LiDAR is leaf-independent; photogrammetry is not.
 
 Caveats / known issues:
-- Crowns are **over-merged**: median crown area ≈ 78 m² (~10 m diameter); tuning
-  `--min-distance`, markers and splitting is needed.
+- Crowns are **over-merged**: median crown area ≈ 50–78 m² (tuned `--sigma 0.5`,
+  `--min-distance 2`); 1 m LiDAR cannot resolve small street trees. Further splitting is
+  needed.
 - Residual building false positives remain after the OSM footprint mask (footprints are
   incomplete; overhanging crowns are dropped by the centroid rule).
-- Full-city output is ~46,800 crowns / **~30 MB** GeoJSON — too large to serve as-is
-  (needs vector tiles, see `future-tasks.md`).
-
-Served as a pilot: `public/data/gottingen-crowns-pilot.geojson` (4,626 crowns over ~1.6 km²,
-central Göttingen).
+- Full-city output is ~65,800 crowns / **41 MB** GeoJSON — served as **MVT vector tiles**
+  (`public/tiles/crowns`, 53 tiles, ~11 MB total) so the browser fetches only tiles in view.
 
 ## Corrected path
 
@@ -249,5 +247,6 @@ central Göttingen).
 
 ## Next step
 
-Tune the CHM detector (reduce over-merging, split touching crowns, add ALKIS/LoD2 building
-masking), then serve the full-city crowns via **vector tiles** instead of a 30 MB GeoJSON.
+Tune the CHM detector to split over-merged crowns (smaller `--min-distance`, marker-based
+splitting, ALKIS/LoD2 building masking) and add a proper precision/recall evaluation
+against hand-delineated crowns.

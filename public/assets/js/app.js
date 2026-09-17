@@ -4,7 +4,14 @@
     var settings = JSON.parse(document.getElementById('app-settings').textContent);
     var mapConfig = settings.map;
 
-    var map = L.map('map').setView(mapConfig.center, mapConfig.zoom);
+    var params = new URLSearchParams(window.location.search);
+    var center = [
+        parseFloat(params.get('lat')) || mapConfig.center[0],
+        parseFloat(params.get('lng')) || mapConfig.center[1]
+    ];
+    var zoom = parseInt(params.get('zoom'), 10) || mapConfig.zoom;
+
+    var map = L.map('map', { preferCanvas: true }).setView(center, zoom);
 
     L.tileLayer(mapConfig.basemap, {
         attribution: mapConfig.attribution,
@@ -55,10 +62,6 @@
                     }
                 }).addTo(map);
 
-                if (geojson.features && geojson.features.length) {
-                    map.fitBounds(layer.getBounds(), { padding: [20, 20] });
-                }
-
                 return layer;
             })
             .catch(function (error) {
@@ -88,6 +91,67 @@
                         map.removeLayer(layer);
                     }
                 });
+            }
+        });
+
+        input.dispatchEvent(new Event('change'));
+    });
+
+    // Vector-tile layers (pre-tiled with geojson-vt/vt-pbf), served per viewport.
+    var tileConfigs = settings.tileLayers || [];
+    var tileLayers = {};
+    var tileLoaded = {};
+
+    tileConfigs.forEach(function (config) {
+        tileLayers[config.name] = config;
+    });
+
+    function addTileLayer(config) {
+        var color = config.fill_color || '#e67e22';
+        var styles = {};
+        styles[config.name] = {
+            fill: true,
+            fillColor: color,
+            fillOpacity: 0.55,
+            color: color,
+            weight: 0.5
+        };
+
+        var layer = L.vectorGrid.protobuf(config.url, {
+            minZoom: config.min_zoom,
+            maxNativeZoom: config.max_zoom,
+            maxZoom: 19,
+            interactive: true,
+            vectorTileLayerStyles: styles,
+            rendererFactory: L.canvas.tile
+        });
+
+        layer.on('click', function (event) {
+            var properties = event.layer.properties || {};
+            L.popup()
+                .setLatLng(event.latlng)
+                .setContent(popupHtml(properties))
+                .openOn(map);
+        });
+
+        return layer;
+    }
+
+    document.querySelectorAll('#layer-list input[data-tile-layer]').forEach(function (input) {
+        var name = input.getAttribute('data-tile-layer');
+        var config = tileLayers[name];
+        if (!config) {
+            return;
+        }
+
+        input.addEventListener('change', function () {
+            if (input.checked) {
+                if (!tileLoaded[name]) {
+                    tileLoaded[name] = addTileLayer(config);
+                }
+                map.addLayer(tileLoaded[name]);
+            } else if (tileLoaded[name]) {
+                map.removeLayer(tileLoaded[name]);
             }
         });
 
