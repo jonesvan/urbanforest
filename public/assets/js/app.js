@@ -4,6 +4,7 @@
     var settings = JSON.parse(document.getElementById('app-settings').textContent);
     var params = new URLSearchParams(window.location.search);
     var mapConfig = settings.map;
+    var mobileQuery = window.matchMedia('(max-width: 768px)');
 
     // config center is [lat, lng]; MapLibre wants [lng, lat]
     var center = [
@@ -32,17 +33,73 @@
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
+    map.addControl(new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: false,
+        showAccuracyCircle: true,
+        showUserLocation: true
+    }), 'bottom-right');
 
     map.on('error', function (event) {
         console.error('maplibre-error:', event && event.error ? event.error.message : event);
     });
 
+    function isMobile() {
+        return mobileQuery.matches;
+    }
+
+    /* ---- Feature inspection ------------------------------------------- */
+
     var popup = new maplibregl.Popup({ closeButton: true, maxWidth: '320px' });
+    var featureCard = document.getElementById('feature-card');
+    var featureTitle = document.getElementById('feature-title');
+    var featureBody = document.getElementById('feature-body');
+
+    var PROPERTY_LABELS = {
+        height_max: 'Height',
+        height: 'Height',
+        area_m2: 'Crown area',
+        circumference: 'Circumference',
+        species: 'Species',
+        genus: 'Genus',
+        leaf_type: 'Leaf type',
+        name: 'Name'
+    };
 
     function escapeHtml(value) {
         return String(value).replace(/[&<>"]/g, function (c) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
         });
+    }
+
+    function labelFor(key) {
+        if (PROPERTY_LABELS[key]) {
+            return PROPERTY_LABELS[key];
+        }
+        return key.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
+    function formatValue(key, value) {
+        if (value === null || value === undefined || value === '') {
+            return '—';
+        }
+        if (key === 'height_max' || key === 'height') {
+            var n = Number(value);
+            return isNaN(n) ? String(value) : n.toFixed(n % 1 ? 1 : 0) + ' m';
+        }
+        if (key === 'area_m2') {
+            var area = Number(value);
+            return isNaN(area) ? String(value) : Math.round(area).toLocaleString() + ' m²';
+        }
+        if (key === 'circumference') {
+            return value + ' m';
+        }
+        return String(value);
+    }
+
+    function titleFor(properties) {
+        properties = properties || {};
+        return properties.name || properties.species || properties.genus || 'Tree';
     }
 
     function popupHtml(properties) {
@@ -51,21 +108,213 @@
             return 'Tree';
         }
         return keys.map(function (key) {
-            return '<strong>' + escapeHtml(key) + ':</strong> ' + escapeHtml(properties[key]);
+            return '<strong>' + escapeHtml(labelFor(key)) + ':</strong> ' + escapeHtml(formatValue(key, properties[key]));
         }).join('<br>');
+    }
+
+    function featureRowsHtml(properties) {
+        var keys = Object.keys(properties || {});
+        if (!keys.length) {
+            return '<dt>Tree</dt><dd>No attributes</dd>';
+        }
+        return keys.map(function (key) {
+            return '<dt>' + escapeHtml(labelFor(key)) + '</dt><dd>' + escapeHtml(formatValue(key, properties[key])) + '</dd>';
+        }).join('');
+    }
+
+    function hideFeature() {
+        if (featureCard.hidden) {
+            return;
+        }
+        featureCard.classList.remove('is-visible');
+        window.setTimeout(function () { featureCard.hidden = true; }, 320);
+    }
+
+    function showFeature(properties, lngLat) {
+        if (!isMobile()) {
+            popup.setLngLat(lngLat).setHTML(popupHtml(properties)).addTo(map);
+            return;
+        }
+        popup.remove();
+        closeSheet();
+        featureTitle.textContent = titleFor(properties);
+        featureBody.innerHTML = featureRowsHtml(properties);
+        featureCard.hidden = false;
+        window.requestAnimationFrame(function () { featureCard.classList.add('is-visible'); });
+    }
+
+    var featureClose = document.getElementById('feature-close');
+    if (featureClose) {
+        featureClose.addEventListener('click', hideFeature);
     }
 
     function bindPopup(layerIds) {
         layerIds.forEach(function (id) {
             map.on('click', id, function (event) {
-                popup.setLngLat(event.lngLat)
-                    .setHTML(popupHtml(event.features[0].properties))
-                    .addTo(map);
+                showFeature(event.features[0].properties, event.lngLat);
             });
             map.on('mouseenter', id, function () { map.getCanvas().style.cursor = 'pointer'; });
             map.on('mouseleave', id, function () { map.getCanvas().style.cursor = ''; });
         });
     }
+
+    map.on('click', function (event) {
+        if (!isMobile() || featureCard.hidden) {
+            return;
+        }
+        var ids = [];
+        Object.keys(layerIdsByName).forEach(function (name) {
+            ids = ids.concat(layerIdsByName[name]);
+        });
+        ids = ids.filter(function (id) { return map.getLayer(id); });
+        if (ids.length && !map.queryRenderedFeatures(event.point, { layers: ids }).length) {
+            hideFeature();
+        }
+    });
+
+    /* ---- Bottom sheet --------------------------------------------------- */
+
+    var panel = document.getElementById('layer-panel');
+    var panelHead = document.getElementById('panel-head');
+    var grabber = document.getElementById('sheet-grabber');
+    var backdrop = document.getElementById('sheet-backdrop');
+
+    function sheetPeek() {
+        return panelHead.offsetTop + panelHead.offsetHeight;
+    }
+
+    function updateSheetMetrics() {
+        if (!isMobile()) {
+            panel.style.removeProperty('--panel-peek');
+            panel.classList.remove('is-open', 'is-dragging');
+            panel.style.transform = '';
+            backdrop.hidden = true;
+            backdrop.classList.remove('is-visible');
+            panelHead.setAttribute('tabindex', '-1');
+            panelHead.removeAttribute('aria-expanded');
+            return;
+        }
+        panelHead.setAttribute('tabindex', '0');
+        panelHead.setAttribute('aria-expanded', panel.classList.contains('is-open') ? 'true' : 'false');
+        var peek = sheetPeek();
+        if (peek > 0) {
+            panel.style.setProperty('--panel-peek', Math.round(peek) + 'px');
+        }
+    }
+
+    function setSheetOpen(open) {
+        panel.classList.toggle('is-open', open);
+        panelHead.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) {
+            hideFeature();
+            backdrop.hidden = false;
+            window.requestAnimationFrame(function () { backdrop.classList.add('is-visible'); });
+        } else {
+            backdrop.classList.remove('is-visible');
+            window.setTimeout(function () {
+                if (!panel.classList.contains('is-open')) {
+                    backdrop.hidden = true;
+                }
+            }, 280);
+        }
+    }
+
+    function closeSheet() {
+        if (panel.classList.contains('is-open')) {
+            setSheetOpen(false);
+        }
+    }
+
+    function setupSheetDrag() {
+        var drag = null;
+
+        function onDown(event) {
+            if (!isMobile() || (event.button !== undefined && event.button !== 0)) {
+                return;
+            }
+            drag = {
+                startY: event.clientY,
+                open: panel.classList.contains('is-open'),
+                peek: sheetPeek(),
+                moved: false
+            };
+            panel.classList.add('is-dragging');
+            try { event.currentTarget.setPointerCapture(event.pointerId); } catch (err) {}
+        }
+
+        function onMove(event) {
+            if (!drag) {
+                return;
+            }
+            var delta = event.clientY - drag.startY;
+            if (Math.abs(delta) > 4) {
+                drag.moved = true;
+            }
+            var base = drag.open ? 0 : drag.peek;
+            var y = Math.min(Math.max(base + delta, 0), drag.peek);
+            panel.style.transform = 'translateY(' + y + 'px)';
+            if (event.cancelable) {
+                event.preventDefault();
+            }
+        }
+
+        function onUp(event) {
+            if (!drag) {
+                return;
+            }
+            var delta = event.clientY - drag.startY;
+            var base = drag.open ? 0 : drag.peek;
+            var y = base + delta;
+            var open;
+            if (!drag.moved) {
+                open = !drag.open;
+            } else {
+                open = y < drag.peek * 0.5;
+            }
+            drag = null;
+            panel.classList.remove('is-dragging');
+            panel.style.transform = '';
+            setSheetOpen(open);
+        }
+
+        [grabber, panelHead].forEach(function (el) {
+            el.addEventListener('pointerdown', onDown);
+            el.addEventListener('pointermove', onMove);
+            el.addEventListener('pointerup', onUp);
+            el.addEventListener('pointercancel', onUp);
+        });
+
+        panelHead.addEventListener('keydown', function (event) {
+            if (!isMobile()) {
+                return;
+            }
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setSheetOpen(!panel.classList.contains('is-open'));
+            }
+        });
+
+        backdrop.addEventListener('click', closeSheet);
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeSheet();
+                hideFeature();
+            }
+        });
+
+        window.addEventListener('resize', updateSheetMetrics);
+        window.addEventListener('orientationchange', function () {
+            window.setTimeout(updateSheetMetrics, 250);
+        });
+        if (mobileQuery.addEventListener) {
+            mobileQuery.addEventListener('change', function () {
+                window.requestAnimationFrame(updateSheetMetrics);
+            });
+        }
+    }
+
+    /* ---- Layer wiring --------------------------------------------------- */
 
     function absoluteUrl(url) {
         if (/^https?:\/\//i.test(url)) {
@@ -269,5 +518,8 @@
                 });
             }
         });
+
+        setupSheetDrag();
+        updateSheetMetrics();
     });
 })();

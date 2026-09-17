@@ -12,7 +12,8 @@ $h = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES);
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#125634">
 <title>urbanforest — Trees API</title>
 <link rel="stylesheet" href="/assets/css/style.css">
 </head>
