@@ -1,7 +1,7 @@
 :root {
-    --green: #1b7f4d;
-    --green-dark: #125634;
-    --green-bright: #2f9e44;
+    --green: #059669;
+    --green-dark: #064e3b;
+    --green-bright: #10b981;
     --ink: #101512;
     --muted: #5a6b5f;
     --panel-bg: rgba(255, 255, 255, 0.94);
@@ -639,7 +639,7 @@ button {
         z-index: 1000;
         min-height: 3.25rem;
         padding: calc(0.5rem + var(--safe-top)) 1rem 0.5rem;
-        background: rgba(13, 54, 35, 0.82);
+        background: rgba(6, 78, 59, 0.82);
         backdrop-filter: blur(16px) saturate(150%);
         -webkit-backdrop-filter: blur(16px) saturate(150%);
         border-bottom: 1px solid rgba(255, 255, 255, 0.12);

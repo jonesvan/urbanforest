@@ -13,9 +13,14 @@
     ];
     var zoom = params.get('zoom') ? parseFloat(params.get('zoom')) : mapConfig.zoom;
 
-    var map = new maplibregl.Map({
-        container: 'map',
-        style: {
+    // Vector basemap (OpenFreeMap, no API key). ?style=positron|liberty|bright|dark
+    // overrides the configured default; empty style_url falls back to raster.
+    var styleOptions = mapConfig.style_options || {};
+    var requestedStyle = (params.get('style') || '').toLowerCase();
+    var mapStyle = styleOptions[requestedStyle] || mapConfig.style_url || null;
+
+    if (!mapStyle) {
+        mapStyle = {
             version: 8,
             sources: {
                 basemap: {
@@ -26,7 +31,12 @@
                 }
             },
             layers: [{ id: 'basemap', type: 'raster', source: 'basemap' }]
-        },
+        };
+    }
+
+    var map = new maplibregl.Map({
+        container: 'map',
+        style: mapStyle,
         center: center,
         zoom: zoom,
         hash: false

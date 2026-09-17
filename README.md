@@ -4,7 +4,7 @@ A web app that visualizes street trees in urban areas, combining [ESA Copernicus
 
 ## What it does
 
-`urbanforest` renders street and urban trees as an interactive MapLibre GL JS (WebGL) map over an OpenStreetMap basemap. It combines three layers:
+`urbanforest` renders street and urban trees as an interactive MapLibre GL JS (WebGL) map over an [OpenFreeMap](https://openfreemap.org/) vector basemap (OpenStreetMap data). It combines three layers:
 
 - **Tree patches** from the **Urban Atlas Street Tree Layer (STL)** — a Copernicus Land Monitoring Service product derived from high-resolution satellite imagery, mapping contiguous rows and patches of trees in European Functional Urban Areas ("Erfasst sogar Einzel- und Straßenbäume in städtischen Gebieten").
 - **Individual trees** from **OpenStreetMap** (`natural=tree` nodes) — one point per mapped tree.

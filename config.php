@@ -10,6 +10,15 @@ return [
     'map' => [
         'center' => [51.5336, 9.9352],
         'zoom' => 13,
+        // OpenFreeMap vector basemap (OpenStreetMap data, no API key). Set to ''
+        // to fall back to the raster sources below.
+        'style_url' => 'https://tiles.openfreemap.org/styles/positron',
+        'style_options' => [
+            'positron' => 'https://tiles.openfreemap.org/styles/positron',
+            'liberty' => 'https://tiles.openfreemap.org/styles/liberty',
+            'bright' => 'https://tiles.openfreemap.org/styles/bright',
+            'dark' => 'https://tiles.openfreemap.org/styles/dark',
+        ],
         'basemap' => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     ],
@@ -25,8 +34,8 @@ return [
             'point_min_zoom' => 6,
             'point_max_zoom' => 12,
             'default' => true,
-            'fill_color' => '#2f9e44',
-            'line_color' => '#1b6e34',
+            'fill_color' => '#10b981',
+            'line_color' => '#047857',
             'meta' => [
                 'Source' => 'LGLN OpenGeoData — DOM1 (surface) + DGM1 (terrain), airborne LiDAR',
                 'Provider' => 'LGLN Niedersachsen',
