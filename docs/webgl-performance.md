@@ -193,6 +193,9 @@ Results:
 - Crowns render crisply at **z13–z19** (verified with headless screenshots); MapLibre
   over-zooms the z17 vector tiles natively, so **no z18/z19 tiles and no SVG fallback** are
   needed.
+- Zoomed out they no longer disappear: a second tileset of **crown centroids**
+  (`public/tiles/crown-points`, z6–z12) is drawn as a MapLibre `circle` layer for
+  `zoom < 13`, switching to the polygon fill at z13 (`minzoom`/`maxzoom` on the layers).
 - One gotcha solved: MapLibre requires **absolute** tile URLs and must keep the
   `{z}/{x}/{y}` placeholders literal — `new URL()` percent-encoded the braces (`%7Bz%7D`)
   and broke tile loading, so the URL is prefixed as a string instead.

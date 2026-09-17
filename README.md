@@ -133,7 +133,8 @@ public/            Web root
   assets/js/       MapLibre GL JS map logic
   data/            Preprocessed GeoJSON layers (generated)
 public/tiles/
-  crowns/          Vector tiles (MVT) for the detected tree crowns
+  crowns/          Vector tiles (MVT) for the detected tree crowns (z13–z17, polygons)
+  crown-points/    Low-zoom crown centroids (z6–z12), drawn as dots
 scripts/
   fetch-stl.mjs          Download STL tree patches from Copernicus for an FUA
   convert-stl.mjs        Convert .fgb -> .geojson (EPSG:3035 -> 4326)

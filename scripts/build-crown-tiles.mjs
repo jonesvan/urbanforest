@@ -26,6 +26,7 @@ const minZoom = Number(args.minzoom ?? 13);
 const maxZoom = Number(args.maxzoom ?? 17);
 const layerName = args.layer ?? 'crowns';
 const tolerance = Number(args.tolerance ?? 1.5);
+const pointsMode = Boolean(args.points);
 
 const lon2tile = (lon, z) => Math.floor(((lon + 180) / 360) * 2 ** z);
 const lat2tile = (lat, z) => {
@@ -34,7 +35,15 @@ const lat2tile = (lat, z) => {
 };
 
 // At low zoom, small crowns are sub-pixel and only add render cost, so drop them.
+// In --points mode crowns are single dots, so only the largest survive at low zoom.
 function minAreaForZoom(z) {
+    if (pointsMode) {
+        if (z <= 9) return 400;
+        if (z === 10) return 300;
+        if (z === 11) return 200;
+        if (z === 12) return 120;
+        return 0;
+    }
     if (z <= 13) return 120;
     if (z === 14) return 60;
     if (z === 15) return 30;
@@ -50,7 +59,30 @@ function filterTile(tile, z) {
 }
 
 const geojson = JSON.parse(await readFile(input, 'utf8'));
-console.log(`features: ${geojson.features.length}`);
+
+if (pointsMode) {
+    // one dot per crown: use the centroid of the outer ring
+    geojson.features = geojson.features.map((feature) => {
+        const polygon = feature.geometry.type === 'Polygon'
+            ? feature.geometry.coordinates
+            : feature.geometry.coordinates[0];
+        const ring = polygon[0];
+        let sumX = 0;
+        let sumY = 0;
+        const count = Math.max(ring.length - 1, 1);
+        for (let i = 0; i < count; i++) {
+            sumX += ring[i][0];
+            sumY += ring[i][1];
+        }
+        return {
+            type: 'Feature',
+            properties: feature.properties,
+            geometry: { type: 'Point', coordinates: [sumX / count, sumY / count] },
+        };
+    });
+}
+
+console.log(`features: ${geojson.features.length}${pointsMode ? ' (points)' : ''}`);
 
 const index = new geojsonvt(geojson, {
     maxZoom,

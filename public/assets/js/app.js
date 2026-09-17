@@ -113,6 +113,7 @@
                 type: 'fill',
                 source: source,
                 'source-layer': config.name,
+                minzoom: config.min_zoom,
                 paint: {
                     'fill-color': color,
                     'fill-opacity': 0.55
@@ -123,13 +124,48 @@
                 type: 'line',
                 source: source,
                 'source-layer': config.name,
+                minzoom: config.min_zoom,
                 paint: {
                     'line-color': lineColor,
                     'line-width': 0.5
                 }
             });
         }
-        var ids = register(config.name, [fillId, lineId]);
+
+        var ids = [fillId, lineId];
+
+        // below the polygon zooms, crowns are drawn as simple dots so they never vanish
+        if (config.point_url) {
+            var pointSource = source + '-points';
+            if (!map.getSource(pointSource)) {
+                map.addSource(pointSource, {
+                    type: 'vector',
+                    tiles: [absoluteUrl(config.point_url)],
+                    minzoom: config.point_min_zoom || 0,
+                    maxzoom: config.point_max_zoom || config.max_zoom
+                });
+            }
+            var dotId = source + '-dot';
+            if (!map.getLayer(dotId)) {
+                map.addLayer({
+                    id: dotId,
+                    type: 'circle',
+                    source: pointSource,
+                    'source-layer': config.name,
+                    maxzoom: config.min_zoom,
+                    paint: {
+                        'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 1.2, 10, 2, 12, 3],
+                        'circle-color': color,
+                        'circle-opacity': 0.8,
+                        'circle-stroke-color': lineColor,
+                        'circle-stroke-width': 0.3
+                    }
+                });
+            }
+            ids.push(dotId);
+        }
+
+        ids = register(config.name, ids);
         setVisibility(ids, visible);
         bindPopup(ids);
     }
