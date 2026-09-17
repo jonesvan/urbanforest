@@ -33,6 +33,22 @@ const lat2tile = (lat, z) => {
     return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z);
 };
 
+// At low zoom, small crowns are sub-pixel and only add render cost, so drop them.
+function minAreaForZoom(z) {
+    if (z <= 13) return 120;
+    if (z === 14) return 60;
+    if (z === 15) return 30;
+    if (z === 16) return 12;
+    return 0;
+}
+
+function filterTile(tile, z) {
+    const minArea = minAreaForZoom(z);
+    if (!minArea || !tile) return tile;
+    const features = tile.features.filter((f) => Number(f.tags?.area_m2 ?? 0) >= minArea);
+    return features.length ? { ...tile, features } : null;
+}
+
 const geojson = JSON.parse(await readFile(input, 'utf8'));
 console.log(`features: ${geojson.features.length}`);
 
@@ -68,7 +84,7 @@ for (let z = minZoom; z <= maxZoom; z++) {
 
     for (let x = x0; x <= x1; x++) {
         for (let y = y0; y <= y1; y++) {
-            const tile = index.getTile(z, x, y);
+            const tile = filterTile(index.getTile(z, x, y), z);
             if (!tile || tile.features.length === 0) continue;
             const buffer = fromGeojsonVt({ [layerName]: tile });
             const path = `${outDir}/${z}/${x}/${y}.pbf`;

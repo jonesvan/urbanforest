@@ -235,8 +235,10 @@ Caveats / known issues:
 - Residual building false positives remain after the OSM footprint mask (footprints are
   incomplete; overhanging crowns are dropped by the centroid rule).
 - Full-city output is ~65,800 crowns / ~20 MB GeoJSON (simplified 1.5 m) — served as
-  **MVT vector tiles** (`public/tiles/crowns`, zooms 13–17, 520 tiles, ~14 MB) so the
-  browser fetches only tiles in view and crowns stay crisp when zoomed in.
+  **MVT vector tiles** (`public/tiles/crowns`, zooms 13–17, 520 tiles, ~10 MB) so the
+  browser fetches only tiles in view. Crowns are rendered with the **SVG** tile renderer so
+  they stay crisp at every zoom, and at low zooms small (sub-pixel) crowns are dropped
+  during tiling to keep the SVG light (e.g. z13 keeps only crowns ≥ 120 m²).
 
 ## Corrected path
 
