@@ -147,6 +147,7 @@ docs/
   data-access.md      How to obtain the STL data
   tree-detection.md   Scope + results for detecting every individual tree
   future-tasks.md     Performance, data-source and model decisions ahead
+  webgl-performance.md Options for GPU (WebGL/WebGPU) rendering in Leaflet
 config.php            Shared configuration
 ```
 
