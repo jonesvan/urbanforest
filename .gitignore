@@ -1,0 +1,17 @@
+# Node dependencies
+node_modules/
+
+# Downloaded Copernicus source files
+data-src/
+*.fgb
+*.gpkg
+*.sqlite
+*.gdb/
+
+# Generated web layers
+public/data/*.geojson
+
+# ...except the committed sample dataset
+!public/data/gottingen-street-trees.geojson
+
+.DS_Store

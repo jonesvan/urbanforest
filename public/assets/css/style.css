@@ -1,0 +1,107 @@
+:root {
+    --green: #1b7f4d;
+    --green-dark: #125634;
+    --ink: #1c1f23;
+    --panel-bg: rgba(255, 255, 255, 0.94);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    height: 100%;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    background: var(--green-dark);
+    color: #fff;
+    z-index: 1000;
+}
+
+.topbar h1 {
+    margin: 0;
+    font-size: 1.15rem;
+    letter-spacing: 0.02em;
+}
+
+.tagline {
+    font-size: 0.8rem;
+    opacity: 0.85;
+}
+
+#map {
+    flex: 1;
+    min-height: 0;
+}
+
+.panel {
+    position: absolute;
+    top: 4.2rem;
+    right: 0.75rem;
+    z-index: 900;
+    width: 15rem;
+    max-height: calc(100vh - 5.5rem);
+    overflow: auto;
+    padding: 0.75rem 0.9rem;
+    background: var(--panel-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.panel h2 {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--green-dark);
+}
+
+.panel ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.panel li + li {
+    margin-top: 0.35rem;
+}
+
+.panel label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.panel .empty {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.panel code {
+    background: #eef2ef;
+    padding: 0 0.2rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+}
+
+.leaflet-popup-content {
+    font-size: 0.82rem;
+    margin: 0.5rem 0.7rem;
+}

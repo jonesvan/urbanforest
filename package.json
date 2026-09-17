@@ -1,0 +1,22 @@
+{
+  "name": "urbanforest",
+  "version": "0.1.0",
+  "description": "Visualize ESA Copernicus Urban Atlas street trees on an OpenStreetMap basemap.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "fetch": "node scripts/fetch-stl.mjs",
+    "convert": "node scripts/convert-stl.mjs",
+    "serve": "php -S localhost:8000 -t public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonesvan/urbanforest.git"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1134.0",
+    "flatgeobuf": "^4.4.0",
+    "proj4": "^2.22.0"
+  }
+}
