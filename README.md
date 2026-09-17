@@ -4,7 +4,12 @@ A web app that visualizes street trees in urban areas, combining [ESA Copernicus
 
 ## What it does
 
-`urbanforest` reads the **Urban Atlas Street Tree Layer (STL)** — a Copernicus Land Monitoring Service product derived from high-resolution satellite imagery that maps contiguous rows and patches of street trees in European Functional Urban Areas ("Erfasst sogar Einzel- und Straßenbäume in städtischen Gebieten") — and renders them as an interactive map on top of an OpenStreetMap basemap.
+`urbanforest` renders street and urban trees as an interactive Leaflet map over an OpenStreetMap basemap. It combines two layers:
+
+- **Tree patches** from the **Urban Atlas Street Tree Layer (STL)** — a Copernicus Land Monitoring Service product derived from high-resolution satellite imagery, mapping contiguous rows and patches of trees in European Functional Urban Areas ("Erfasst sogar Einzel- und Straßenbäume in städtischen Gebieten").
+- **Individual trees** from **OpenStreetMap** (`natural=tree` nodes) — one point per mapped tree.
+
+> The STL is a *patch* product: its Minimum Mapping Unit is 0.05 ha (500 m²) with a 10 m minimum width, so a lone tree only appears where it reaches that size. The goal of showing **every individual tree** is therefore served by the OSM point layer, with the STL providing the satellite-derived picture of tree cover.
 
 ## Stack
 
@@ -27,14 +32,24 @@ consuming preprocessed GeoJSON. Node is only used for the offline data pipeline.
   - Access details: see [`docs/data-access.md`](docs/data-access.md)
 - **OpenStreetMap (OSM)**
   - Basemap tiles
-  - Optional: cross-reference with OSM `natural=tree` / `landuse=forest` features
+  - **Individual trees** as `natural=tree` nodes (via the Overpass API) — one point per tree
+  - Optional attributes: `species`, `genus`, `leaf_type`, `height`, `circumference`, …
 
 ## Pipeline
 
+Tree patches (Copernicus STL):
+
 1. **Fetch** — `scripts/fetch-stl.mjs` queries the Copernicus STAC API for a Functional Urban Area, gets temporary S3 credentials from the Copernicus Data Space Ecosystem, and downloads the STL FlatGeobuf.
 2. **Convert** — `scripts/convert-stl.mjs` decodes the FlatGeobuf and reprojects it from EPSG:3035 to EPSG:4326 (`flatgeobuf` + `proj4`), writing GeoJSON.
-3. **Serve** — the GeoJSON is placed in `public/data/` and served as a static file by PHP.
-4. **Render** — `public/assets/js/app.js` loads the GeoJSON with Leaflet and draws it over an OpenStreetMap basemap.
+
+Individual trees (OpenStreetMap):
+
+3. **Fetch** — `scripts/fetch-osm-trees.mjs` queries the Overpass API for `natural=tree` nodes in a bounding box and writes them as GeoJSON points.
+
+Render:
+
+4. **Serve** — both GeoJSON files are placed in `public/data/` and served statically by PHP.
+5. **Render** — `public/assets/js/app.js` draws patches as filled polygons and trees as point markers, with popups.
 
 ## Run
 
@@ -44,7 +59,7 @@ One-time setup:
 npm install
 ```
 
-Fetch and convert an area (free CDSE account required):
+Fetch and convert an area (free CDSE account required for STL):
 
 ```bash
 export CDSE_USER=you@example.com
@@ -53,14 +68,25 @@ export CDSE_PASS=your-password
 npm run fetch -- --fua=GOTTINGEN --list          # inspect available items
 npm run fetch -- --fua=GOTTINGEN --out=data-src/gottingen-stl.fgb
 npm run convert -- data-src/gottingen-stl.fgb public/data/gottingen-street-trees.geojson
+```
 
+Fetch individual trees (no account needed):
+
+```bash
+npm run fetch:trees -- --out=public/data/gottingen-trees.geojson
+```
+
+Serve:
+
+```bash
 npm run serve
 ```
 
 Then open http://localhost:8000.
 
-Göttingen (`public/data/gottingen-street-trees.geojson`, STL reference year 2021) is
-already generated and committed, so the map shows data without rerunning the pipeline.
+Göttingen is pre-generated and committed — `public/data/gottingen-street-trees.geojson`
+(STL 2021, 8,824 tree patches) and `public/data/gottingen-trees.geojson` (23,746
+individual OSM trees) — so the map shows data without rerunning the pipeline.
 
 ## Layout
 
@@ -71,13 +97,21 @@ public/            Web root
   assets/js/       Leaflet map logic
   data/            Preprocessed GeoJSON layers (generated)
 scripts/
-  fetch-stl.mjs    Download STL data from Copernicus for an FUA
-  convert-stl.mjs  Convert .fgb -> .geojson (EPSG:3035 -> 4326)
+  fetch-stl.mjs       Download STL tree patches from Copernicus for an FUA
+  convert-stl.mjs     Convert .fgb -> .geojson (EPSG:3035 -> 4326)
+  fetch-osm-trees.mjs Download individual OSM trees as GeoJSON points
 docs/
-  data-access.md   How to obtain the STL data
-config.php         Shared configuration
+  data-access.md      How to obtain the STL data
+config.php            Shared configuration
 ```
 
 ## Status
 
-Working for Göttingen: STL data fetched, converted to GeoJSON, and rendered with Leaflet.
+Working for Göttingen: STL tree patches and 23,746 individual OSM trees, rendered with
+Leaflet.
+
+## Goals
+
+- Show **all individual trees** on the map (OSM), backed by satellite-derived tree patches (Copernicus STL).
+- Enable comparison of Copernicus STL against OpenStreetMap tree coverage.
+- Provide reusable open data exports (GeoJSON).

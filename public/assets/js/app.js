@@ -18,11 +18,22 @@
         fillOpacity: 0.5
     };
 
+    var treePointStyle = {
+        radius: 2.5,
+        color: '#0f5132',
+        weight: 0.5,
+        fillColor: '#2ecc71',
+        fillOpacity: 0.9
+    };
+
     function popupHtml(properties) {
-        var rows = Object.keys(properties).map(function (key) {
+        var keys = Object.keys(properties);
+        if (!keys.length) {
+            return 'Tree';
+        }
+        return keys.map(function (key) {
             return '<strong>' + key + ':</strong> ' + properties[key];
-        });
-        return rows.length ? rows.join('<br>') : 'Street tree';
+        }).join('<br>');
     }
 
     function addLayer(url) {
@@ -36,6 +47,9 @@
             .then(function (geojson) {
                 var layer = L.geoJSON(geojson, {
                     style: streetTreeStyle,
+                    pointToLayer: function (feature, latlng) {
+                        return L.circleMarker(latlng, treePointStyle);
+                    },
                     onEachFeature: function (feature, featureLayer) {
                         featureLayer.bindPopup(popupHtml(feature.properties || {}));
                     }

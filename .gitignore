@@ -11,7 +11,8 @@ data-src/
 # Generated web layers
 public/data/*.geojson
 
-# ...except the committed sample dataset
+# ...except the committed sample datasets
 !public/data/gottingen-street-trees.geojson
+!public/data/gottingen-trees.geojson
 
 .DS_Store
