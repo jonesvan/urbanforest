@@ -159,28 +159,34 @@ A deck.gl path is wired in behind a flag: **`?renderer=webgl`**.
 - The default (`?renderer=svg` / no flag) still uses Leaflet.VectorGrid + SVG, so the two
   can be A/B compared without touching the dataset.
 
-Observed (headless Chromium + SwiftShader screenshots): crowns render as crisp GPU
-polygons over the basemap at **z13–z17** and look equal to or sharper than the SVG path.
+Observed (headless Chromium + SwiftShader screenshots): with `tileSize: 512` the crowns
+render as crisp GPU polygons over the basemap at **z13–z17**, equal to or sharper than the
+SVG path.
 
-Known limitations found while prototyping:
+Finding on the "512-scheme tileset": **it is not needed.** deck's tile zoom depends on the
+layer's `tileSize` relative to its 512-based viewport:
 
-1. **Tile-scheme offset.** deck.gl/TileLayer default to a 512-px tile scheme; Leaflet and
-   our `geojson-vt` tiles are 256-px. As a result deck fetches tile zoom ≈ viewport
-   zoom + 1, so it uses our z17 tiles at Leaflet z16 and runs out at higher zooms.
-2. **Over-zoom above z17 is unreliable.** deck is documented to over-zoom past `maxZoom`
-   (`zoom > maxZoom` displays `maxZoom` tiles), but with the scheme mismatch above this
-   did not render dependably in testing; a `visibleMaxZoom` cap hid tiles entirely.
-3. **Automated verification is flaky** under headless SwiftShader (WebGL context is
-   intermittent), so visual spot-checks are needed on a real GPU.
+- `tileSize: 256` made deck request tile zoom = viewport zoom + 1 (one level too deep).
+- `tileSize: 512` (deck's default) makes it request tile zoom = viewport zoom, which is
+  exactly our existing `geojson-vt` tile grid. So the current tileset is consumed
+  correctly; only the renderer config was wrong.
+
+Known limitations:
+
+1. **Over-zoom above `maxZoom` does not render** in deck here (`zoom > maxZoom` is
+   documented to display `maxZoom` tiles, but they stay hidden in testing). To stay crisp
+   at every zoom, `initDeck()` also adds a Leaflet.VectorGrid **SVG layer for z18+**
+   (`minZoom: max_zoom + 1`); the WebGL layer covers z13–z17.
+2. **Automated verification is flaky** under headless SwiftShader — identical runs render
+   or do not, so the deck path must be spot-checked on real GPU hardware.
+3. Extra zoom levels (z18/z19 tiles) would remove the SVG fallback but add ~1.4k/5.6k tiles.
 
 ### To make the WebGL path production-worthy
 
-- Build a **512-scheme tileset** (e.g. `tippecanoe -y` / `-S 512`, or `tileset` with
-  `tileSize: 512`) so deck's indexing matches the tiles, or host the tiles as PMTiles.
-- Or move to **MapLibre GL JS**, whose zoom/tile scheme already matches its tiles and which
-  handles over-zoom natively.
-- Then re-run the benchmark plan below on real hardware and decide whether to make WebGL
-  the default.
+- Confirm on real hardware (the headless flakiness is a test-environment artifact).
+- Decide the over-zoom strategy: either generate z18/z19 tiles, or move to **MapLibre GL
+  JS**, whose scheme handles over-zoom natively and could replace Leaflet entirely.
+- Then re-run the benchmark plan below and decide whether to make WebGL the default.
 
 ## Benchmark plan
 

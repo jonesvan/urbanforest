@@ -207,8 +207,9 @@
             }
         });
 
+        var fallback = {};
+
         function updateLayers() {
-            var debug = params.get('debug') === '1';
             var layers = tileConfigs.filter(function (config) {
                 return activeTiles[config.name];
             }).map(function (config) {
@@ -217,9 +218,7 @@
                     data: config.url,
                     minZoom: config.min_zoom,
                     maxZoom: config.max_zoom,
-                    tileSize: 256,
-                    onTileLoad: debug ? function (tile) { console.log('tile-load', JSON.stringify(tile.index)); } : undefined,
-                    onTileError: debug ? function (err, tile) { console.log('tile-error', JSON.stringify(tile && tile.index), String(err).slice(0, 120)); } : undefined,
+                    tileSize: 512,
                     getFillColor: hexToRgba(config.fill_color || '#e67e22', 140),
                     getLineColor: hexToRgba('#8a4b12', 200),
                     lineWidthMinPixels: 0.5,
@@ -229,6 +228,35 @@
                 });
             });
             deckOverlay.setProps({ layers: layers });
+
+            // deck does not render the over-zoom band, so above the native tile zoom we
+            // add the SVG VectorGrid layer (crisp, vector-scaled) instead.
+            tileConfigs.forEach(function (config) {
+                var name = config.name;
+                if (activeTiles[name] && !fallback[name]) {
+                    var color = config.fill_color || '#e67e22';
+                    var styles = {};
+                    styles[name] = { fill: true, fillColor: color, fillOpacity: 0.55, color: color, weight: 0.5 };
+                    fallback[name] = L.vectorGrid.protobuf(config.url, {
+                        minZoom: config.max_zoom + 1,
+                        maxNativeZoom: config.max_zoom,
+                        maxZoom: 19,
+                        interactive: true,
+                        vectorTileLayerStyles: styles,
+                        rendererFactory: L.svg.tile
+                    });
+                    fallback[name].on('click', function (event) {
+                        L.popup()
+                            .setLatLng(event.latlng)
+                            .setContent(popupHtml(event.layer.properties || {}))
+                            .openOn(map);
+                    });
+                    map.addLayer(fallback[name]);
+                } else if (!activeTiles[name] && fallback[name]) {
+                    map.removeLayer(fallback[name]);
+                    fallback[name] = null;
+                }
+            });
         }
 
         map.on('move zoom resize', function () {
