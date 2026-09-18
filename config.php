@@ -33,7 +33,7 @@ return [
         'tile_size' => 256,
         'max_zoom' => 18,
         'bounds' => [6.5, 51.1, 11.76, 54.15],
-        'attribution' => 'Aerial orthophoto © LGLN Niedersachsen (DOP20, open data)',
+        'attribution' => 'Aerial orthophoto © <a href="https://ni-lgln-opengeodata.hub.arcgis.com/pages/digitales-orthophoto-dop" target="_blank" rel="noopener">LGLN Niedersachsen (DOP20, open data)</a>',
     ],
 
     'tile_layers' => [

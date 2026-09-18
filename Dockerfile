@@ -12,8 +12,17 @@ RUN printf 'ServerName localhost\n' > /etc/apache2/conf-available/servername.con
     > /etc/apache2/conf-available/deflate-extra.conf \
  && a2enconf deflate-extra
 
-COPY . /var/www/html
+# Copy in ascending order of change frequency so cached layers survive: the
+# large, rarely-touched tile and data trees stay cached, and only the small
+# code/assets layers below them are rebuilt and re-pushed on a normal deploy.
+# --chown avoids a separate `chown -R` layer, which would copy every file again.
+COPY --chown=www-data:www-data public/tiles /var/www/html/public/tiles
 
-RUN chown -R www-data:www-data /var/www/html
+COPY --chown=www-data:www-data public/data /var/www/html/public/data
+
+COPY --chown=www-data:www-data public/index.php /var/www/html/public/index.php
+COPY --chown=www-data:www-data public/api /var/www/html/public/api
+COPY --chown=www-data:www-data public/assets /var/www/html/public/assets
+COPY --chown=www-data:www-data config.php /var/www/html/config.php
 
 EXPOSE 80
