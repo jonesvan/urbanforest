@@ -9,7 +9,7 @@ declare(strict_types=1);
  *
  * Returns a GeoJSON FeatureCollection (application/geo+json). Each feature is
  * one detected crown, located at its centroid, with `height_max` (m) and
- * `area_m2` properties. See README.md and docs/tree-detection.md.
+ * `area_m2` properties.
  */
 
 const API_ZOOM = 14;

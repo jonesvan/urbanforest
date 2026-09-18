@@ -154,7 +154,6 @@ gdf = gpd.read_file(
         <li>Coverage: Göttingen city boundary (~117&nbsp;km²), 905,088 crowns.</li>
         <li>Detected crowns are <em>detectable</em> trees only — occluded or young trees will be missing.</li>
         <li>© LGLN Niedersachsen (CC0 / DL-DE-BY-2.0); map data © OpenStreetMap contributors (ODbL).</li>
-        <li>Method and limits: <a href="https://github.com/jonesvan/urbanforest/blob/main/docs/tree-detection.md">docs/tree-detection.md</a>.</li>
     </ul>
 
     <footer>
