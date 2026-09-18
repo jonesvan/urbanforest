@@ -84,30 +84,53 @@ return [
             'Licence' => 'ODbL',
             'API' => 'https://overpass-api.de/api/interpreter',
         ],
+        'gottingen-temperature' => [
+            'Source' => 'Sensor.Community — volunteer weather stations (BME280 / SHT30 / DHT22)',
+            'Provider' => 'Sensor.Community / OK Lab Stuttgart (Open Knowledge Foundation)',
+            'Variable' => 'Air temperature near ground (2 m)',
+            'Resolution' => 'Individual street-level stations, refreshed every ~5 min',
+            'Data' => 'Latest 5-minute reading per station (one station per location)',
+            'Known limits' => 'Low-cost sensors — siting and calibration vary; not WMO reference-grade',
+            'Licence' => 'Open data (Sensor.Community terms)',
+            'Access' => 'https://data.sensor.community/airrohr/v1/filter/box=... ; scripts/fetch-stations.py',
+            'Docs' => 'https://sensor.community',
+        ],
+        'gottingen-air-quality' => [
+            'Source' => 'Sensor.Community — volunteer particulate-matter stations (SDS011 / SPS30)',
+            'Provider' => 'Sensor.Community / OK Lab Stuttgart (Open Knowledge Foundation)',
+            'Variable' => 'PM2.5 (PM10 shown in the popup)',
+            'Resolution' => 'Individual street-level stations, refreshed every ~5 min',
+            'Data' => 'Latest 5-minute reading per station (one station per location)',
+            'Known limits' => 'Optical low-cost sensors — humidity bias; indicative, not reference-grade',
+            'Licence' => 'Open data (Sensor.Community terms)',
+            'Access' => 'https://data.sensor.community/airrohr/v1/filter/box=... ; scripts/fetch-stations.py',
+            'Docs' => 'https://sensor.community',
+        ],
+    ],
+
+    // Colour ramp + sizing for point GeoJSON layers (see rampColorExpression in app.js).
+    'layer_styles' => [
+        'gottingen-temperature' => [
+            'property' => 'value',
+            'domain' => [0, 35],
+            'ramp' => ['#1d4ed8', '#22d3ee', '#facc15', '#f97316', '#dc2626'],
+            'radius' => ['interpolate', ['linear'], ['zoom'], 10, 3, 13, 6, 16, 11],
+            'stroke' => '#ffffff',
+        ],
+        'gottingen-air-quality' => [
+            'property' => 'value',
+            'domain' => [0, 50],
+            'ramp' => ['#22c55e', '#facc15', '#f97316', '#dc2626', '#7e22ce'],
+            'radius' => ['interpolate', ['linear'], ['zoom'], 10, 3, 13, 6, 16, 11],
+            'stroke' => '#ffffff',
+        ],
     ],
 
     // Georeferenced PNG heatmap overlays (MapLibre "image" source), drawn over
     // the basemap. bounds = [west, south, east, north] must match the PNG extent.
+    // Temperature and air quality are measured station point layers instead
+    // (Sensor.Community, scripts/fetch-stations.py) — the finest open resolution.
     'image_layers' => [
-        [
-            'name' => 'temperature',
-            'label' => 'Air temperature (heatmap)',
-            'image' => 'data/gottingen-temperature.png',
-            'bounds' => [9.0, 51.0, 11.0, 52.0],
-            'opacity' => 0.72,
-            'default' => false,
-            'meta' => [
-                'Source' => 'Copernicus Climate Change Service (C3S) — ERA5 reanalysis',
-                'Provider' => 'ECMWF on behalf of the European Union',
-                'Variable' => '2 m air temperature',
-                'Rendering' => 'Inverse-distance interpolation of the native ERA5 grid (~0.25°); colour range auto-scaled',
-                'Access' => 'Open-Meteo Historical Weather API; direct CDS route in scripts/fetch-climate.py',
-                'Known limits' => '~25 km grid cell — a coarse regional field, not an urban heat-island measurement',
-                'Licence' => 'Copernicus open data (CC-BY-4.0)',
-                'Attribution' => 'Contains modified Copernicus Climate Change Service information (ERA5); data via Open-Meteo',
-                'Docs' => 'https://cds.climate.copernicus.eu',
-            ],
-        ],
         [
             'name' => 'co2',
             'label' => 'Carbon dioxide (heatmap)',
@@ -137,6 +160,8 @@ return [
     'layer_defaults' => [
         'gottingen-street-trees' => false,
         'gottingen-trees' => false,
+        'gottingen-temperature' => false,
+        'gottingen-air-quality' => false,
     ],
 
     'copernicus' => [
