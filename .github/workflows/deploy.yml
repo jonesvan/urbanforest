@@ -3,16 +3,21 @@ name: Deploy to Fly.io
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.github/**'
   workflow_dispatch:
 
 concurrency:
   group: deploy-urbanforest
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 
